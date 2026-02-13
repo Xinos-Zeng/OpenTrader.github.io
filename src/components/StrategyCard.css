@@ -1,0 +1,65 @@
+.strategy-card {
+  cursor: pointer;
+}
+
+.strategy-card.selected {
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.strategy-card-content {
+  display: flex;
+  gap: 16px;
+}
+
+.strategy-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.strategy-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.strategy-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.strategy-info p {
+  font-size: 14px;
+  color: var(--color-gray-500);
+  margin: 4px 0 0 0;
+}
+
+.strategy-params {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.param-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--color-gray-100);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--color-gray-500);
+}
+
+.strategy-selected {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-gray-100);
+}
+
+.strategy-selected span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
+}

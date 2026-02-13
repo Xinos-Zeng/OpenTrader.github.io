@@ -1,0 +1,33 @@
+.stats-card {
+  padding: 16px;
+}
+
+.stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats-label {
+  font-size: 14px;
+  color: var(--color-gray-500);
+}
+
+.stats-icon {
+  font-size: 18px;
+}
+
+.stats-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: var(--color-gray-900);
+}
+
+.stats-value.profit {
+  color: var(--color-success);
+}
+
+.stats-value.loss {
+  color: var(--color-danger);
+}
