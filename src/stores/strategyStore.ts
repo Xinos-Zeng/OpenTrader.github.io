@@ -1,7 +1,12 @@
 import { create } from 'zustand';
-import { strategyApi } from '../api/strategy';
+import { strategyApi, UserStrategy } from '../api/strategy';
 import { tradeApi } from '../api/trade';
 import { StrategyInfo, StrategyParams, BacktestResult, BacktestRequest } from '../types';
+
+interface ToastMessage {
+  text: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+}
 
 interface StrategyState {
   strategies: StrategyInfo[];
@@ -10,13 +15,17 @@ interface StrategyState {
   backtestResults: BacktestResult[];
   isLoading: boolean;
   error: string | null;
+  toast: ToastMessage | null;
   fetchStrategies: () => Promise<void>;
   selectStrategy: (strategy: StrategyInfo) => void;
+  selectUserStrategy: (us: UserStrategy) => void;
   fetchParams: (strategyName: string) => Promise<void>;
   updateParams: (params: Record<string, unknown>) => void;
   runBacktest: (data: BacktestRequest) => Promise<boolean>;
   fetchBacktestResults: (strategyName?: string) => Promise<void>;
   clearError: () => void;
+  showToast: (text: string, type?: 'info' | 'warning' | 'error' | 'success') => void;
+  clearToast: () => void;
 }
 
 export const useStrategyStore = create<StrategyState>((set, get) => ({
@@ -26,6 +35,7 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
   backtestResults: [],
   isLoading: false,
   error: null,
+  toast: null,
 
   fetchStrategies: async () => {
     set({ isLoading: true, error: null });
@@ -46,6 +56,21 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
       currentParams: {
         strategy_name: strategy.name,
         params: { ...strategy.default_params },
+      },
+    });
+  },
+  
+  selectUserStrategy: (us) => {
+    // 将用户策略转换为 StrategyInfo 格式
+    set({
+      currentStrategy: {
+        name: `user_${us.id}`,
+        description: us.name,
+        default_params: us.params as Record<string, number>,
+      },
+      currentParams: {
+        strategy_name: us.base_strategy,  // 用于回测的实际策略名
+        params: { ...us.params },
       },
     });
   },
@@ -113,6 +138,10 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+  
+  showToast: (text, type = 'info') => set({ toast: { text, type } }),
+  
+  clearToast: () => set({ toast: null }),
 }));
 
 export default useStrategyStore;

@@ -1,0 +1,257 @@
+/* 收藏详情页面样式 */
+
+.favorite-detail-page {
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.detail-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 16px;
+}
+
+.back-btn:hover {
+  text-decoration: underline;
+}
+
+.detail-title {
+  font-size: 24px;
+  margin: 0 0 24px;
+  color: var(--color-text);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: var(--color-text-secondary);
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 信息卡片 */
+.info-card,
+.stats-card,
+.trades-card {
+  background: var(--color-card-background);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h2,
+.stats-card h2,
+.trades-card h2 {
+  font-size: 16px;
+  margin: 0 0 16px;
+  color: var(--color-text);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-item .label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.info-item .value {
+  font-size: 14px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.params-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.params-section h3 {
+  font-size: 14px;
+  margin: 0 0 12px;
+  color: var(--color-text-secondary);
+}
+
+.params-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.param-item {
+  background: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.param-item .label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-right: 8px;
+}
+
+.param-item .value {
+  font-size: 14px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* 统计结果 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.stat-item {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-item.profit {
+  background: #f0fdf4;
+}
+
+.stat-item.loss {
+  background: #fef2f2;
+}
+
+.stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+
+.stat-item.profit .stat-value {
+  color: var(--color-success);
+}
+
+.stat-item.loss .stat-value {
+  color: var(--color-danger);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* 交易记录列表 */
+.trades-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.trade-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  background: #f9fafb;
+}
+
+.trade-item:last-child {
+  margin-bottom: 0;
+}
+
+.trade-item.buy {
+  border-left-color: var(--color-success);
+  background: #f0fdf4;
+}
+
+.trade-item.sell {
+  border-left-color: var(--color-danger);
+  background: #fef2f2;
+}
+
+.trade-time {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.trade-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.trade-info .signal {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.trade-info .signal.buy {
+  color: var(--color-success);
+}
+
+.trade-info .signal.sell {
+  color: var(--color-danger);
+}
+
+.trade-info .price {
+  font-size: 14px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.trade-reason {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.detail-footer {
+  text-align: center;
+  padding-top: 16px;
+}
+
+.created-time {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* 响应式 */
+@media (min-width: 640px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

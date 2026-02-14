@@ -1,0 +1,818 @@
+/* 流式回测页面样式 */
+
+.backtest-stream-page {
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.stream-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 配置区域 */
+.config-section {
+  background: var(--color-card-background);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.config-section h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: var(--color-text);
+}
+
+.config-row {
+  margin-bottom: 16px;
+}
+
+.config-row label {
+  display: block;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.config-row select,
+.config-row input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #ffffff;
+  color: var(--color-text);
+  color-scheme: light;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.config-row select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.config-row select option {
+  background-color: #ffffff;
+  color: var(--color-text);
+  padding: 8px;
+}
+
+.config-row input[type="date"] {
+  cursor: pointer;
+}
+
+.config-row input[type="date"]::-webkit-datetime-edit {
+  color: var(--color-text);
+}
+
+.config-row input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: none;
+  opacity: 0.6;
+}
+
+.config-row input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.config-row select:focus,
+.config-row input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.config-row select:disabled,
+.config-row input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.config-row.dates,
+.config-row.params,
+.config-row.balance-position {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.input-with-suffix {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.input-with-suffix input {
+  flex: 1;
+  min-width: 0;
+}
+
+.input-with-suffix .suffix {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.config-actions {
+  margin-top: 20px;
+}
+
+.config-actions .btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+}
+
+/* 消息流区域 */
+.message-section {
+  background: var(--color-card-background);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.message-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.progress-date {
+  font-size: 13px;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.message-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.empty-message,
+.loading-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--color-text-secondary);
+}
+
+.error-message {
+  padding: 16px;
+  background: #fef2f2;
+  color: var(--color-danger);
+  border-radius: 8px;
+  margin: 8px;
+}
+
+.loading-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 交易消息卡片 */
+.trade-message {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  background: #f9fafb;
+}
+
+.trade-message.buy {
+  border-left-color: var(--color-success);
+  background: #f0fdf4;
+}
+
+.trade-message.sell {
+  border-left-color: var(--color-danger);
+  background: #fef2f2;
+}
+
+.trade-time {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.trade-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.trade-info .signal {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.trade-info .signal.buy {
+  color: var(--color-success);
+}
+
+.trade-info .signal.sell {
+  color: var(--color-danger);
+}
+
+.trade-info .price {
+  font-size: 14px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.trade-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.trade-reason {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+/* 交易财务信息 */
+.trade-finance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px dashed #e5e7eb;
+  margin-top: 8px;
+}
+
+.finance-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.finance-label {
+  color: var(--color-text-secondary);
+}
+
+.finance-value {
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--color-text);
+}
+
+.finance-value.profit {
+  color: var(--color-success);
+}
+
+.finance-value.loss {
+  color: var(--color-danger);
+}
+
+/* 统计结果区域 */
+.stats-section {
+  background: var(--color-card-background);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.stats-section h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-card.profit {
+  background: #f0fdf4;
+}
+
+.stat-card.loss {
+  background: #fef2f2;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+
+.stat-card.profit .stat-value {
+  color: var(--color-success);
+}
+
+.stat-card.loss .stat-value {
+  color: var(--color-danger);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.stats-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.stats-actions .btn {
+  flex: 1;
+  padding: 12px;
+}
+
+/* 响应式 */
+@media (min-width: 640px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .config-row.dates,
+  .config-row.params,
+  .config-row.balance-position {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  @media (max-width: 480px) {
+    .config-row.balance-position {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .stats-actions {
+    flex-direction: column;
+  }
+}
+
+/* Agent 配置样式 */
+.agent-config {
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.agent-toggle {
+  flex-shrink: 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-text);
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.agent-interval-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+
+.agent-interval-inline.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.agent-interval-inline .interval-label {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.agent-interval-inline input {
+  width: 70px;
+  padding: 6px 8px;
+  font-size: 14px;
+}
+
+.agent-interval-inline .interval-unit {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.agent-badge {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+/* Agent 消息卡片样式 */
+.agent-message {
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 4px solid #6366f1;
+  background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+  margin-bottom: 12px;
+  animation: slideIn 0.3s ease;
+}
+
+.agent-message.analyzing {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+}
+
+.agent-message.adjusted {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+}
+
+.agent-message.no_change {
+  border-left-color: #6b7280;
+  background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+}
+
+.agent-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.agent-icon {
+  font-size: 20px;
+}
+
+.agent-title {
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.agent-message.analyzing .agent-title {
+  color: #f59e0b;
+}
+
+.agent-message.adjusted .agent-title {
+  color: #10b981;
+}
+
+.agent-message.no_change .agent-title {
+  color: #6b7280;
+}
+
+.agent-time {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.agent-content {
+  padding-left: 28px;
+}
+
+.agent-text {
+  color: var(--color-text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.agent-params-change {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.params-before,
+.params-after {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.params-before .label,
+.params-after .label {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.params-before .param {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.params-after .param {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.params-arrow {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+}
+
+.agent-reason {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* 消息头部样式 */
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.message-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-detail {
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-detail:hover {
+  background: var(--color-background);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* 详情弹窗样式 */
+.detail-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.detail-modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.25s ease;
+}
+
+.detail-modal-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
+  gap: 16px;
+}
+
+.detail-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.detail-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.detail-modal-header .close-btn {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.detail-modal-header .close-btn:hover {
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.detail-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+/* 详情列表项 */
+.detail-trade {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid;
+}
+
+.detail-trade.buy {
+  background: #f0fdf4;
+  border-left-color: #22c55e;
+}
+
+.detail-trade.sell {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+}
+
+.detail-trade-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detail-time {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-family: monospace;
+}
+
+.detail-signal {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.detail-signal.buy {
+  color: #16a34a;
+}
+
+.detail-signal.sell {
+  color: #dc2626;
+}
+
+.detail-price {
+  font-family: monospace;
+  font-weight: 500;
+}
+
+.detail-reason {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.detail-trade-finance {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.detail-trade-finance .profit {
+  color: #16a34a;
+}
+
+.detail-trade-finance .loss {
+  color: #dc2626;
+}
+
+/* Agent 详情项 */
+.detail-agent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+  border-left: 3px solid #6366f1;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.detail-agent.adjusted {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border-left-color: #10b981;
+}
+
+.detail-agent.no_change {
+  background: #f9fafb;
+  border-left-color: #9ca3af;
+}
+
+.detail-agent-icon {
+  font-size: 16px;
+}
+
+.detail-agent-msg {
+  color: var(--color-text);
+}
+
+.detail-params {
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

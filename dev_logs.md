@@ -144,3 +144,159 @@ REACT_APP_API_URL=http://localhost:8000
 ### 开发状态：⏳ 待开始
 
 ---
+
+## 阶段四开发记录
+
+### ✅ 流式回测与收藏功能 (2026-02-14)
+
+**已完成功能**：
+1. ✅ 每个用户同时只能进行一次回测
+2. ✅ 交易记录流式返回（实时显示每笔交易）
+3. ✅ 退出页面终止回测
+4. ✅ 回测完成后可保存到收藏
+5. ✅ 收藏列表和详情页面
+
+**后端改动**：
+- `AgentTrader/src/strategy/backtest.py`：新增 `run_stream()` 生成器方法
+- `AgentTrader/src/api/routers/backtest.py`：SSE 端点 `/api/backtest/stream`
+- `AgentTrader/src/api/routers/favorites.py`：收藏 CRUD API
+- `AgentTrader/src/monitor/database.py`：新增 `UserFavorite` 模型和方法
+- `AgentTrader/migrations/schema.sql`：新增 `user_favorites` 表
+
+**前端改动**：
+- `src/stores/backtestStore.ts`：流式回测状态管理
+- `src/pages/backtest/BacktestStream.tsx`：流式回测页面
+- `src/pages/backtest/BacktestSave.tsx`：保存回测结果
+- `src/pages/Favorites.tsx`：收藏列表
+- `src/pages/FavoriteDetail.tsx`：收藏详情
+- `src/api/favorites.ts`：收藏 API 封装
+- `src/components/NavBar.tsx`：新增收藏导航链接
+
+---
+
+### ✅ 已完成 (2026-02-14 参数调整与策略保存)
+
+**阶段五：参数调整与策略保存**
+
+**1. 弹窗样式修复**
+- 修复 Modal 遮罩透明问题
+- 添加 `backdrop-filter: blur(4px)` 毛玻璃效果
+- 确保弹窗背景不透明 (`background: #ffffff`)
+- 添加 CSS 变量：`--color-card-background`, `--color-text`, `--color-border` 等
+
+**2. 后端用户策略 API**
+- 新增 `UserStrategy` 模型 (`src/monitor/database.py`)
+- 新增策略 CRUD 方法
+- 新增 API 路由 (`src/api/routers/user_strategy.py`)
+- 注册路由到 `main.py`
+
+**3. 前端功能**
+- Dashboard 分区显示：系统策略 + 我的策略
+- 我的策略卡片支持删除（使用 ConfirmModal）
+- BacktestStream 新增"保存策略参数"功能
+- strategyStore 新增 `selectUserStrategy` 方法
+
+**涉及文件**：
+- `src/index.css` (新增 CSS 变量)
+- `src/components/Modal.css` (修复透明问题)
+- `src/pages/Dashboard.tsx` (新增我的策略区域)
+- `src/pages/Dashboard.css` (新增样式)
+- `src/pages/backtest/BacktestStream.tsx` (新增保存策略功能)
+- `src/stores/strategyStore.ts` (新增 selectUserStrategy)
+- `src/api/strategy.ts` (新增用户策略 API)
+- `AgentTrader/src/monitor/database.py` (新增 UserStrategy 模型)
+- `AgentTrader/src/api/routers/user_strategy.py` (新增)
+- `AgentTrader/main.py` (注册路由)
+- `AgentTrader/migrations/schema.sql` (新增 user_strategies 表)
+
+---
+
+## 阶段六：Agent 交互
+
+### 开发状态：✅ 已完成
+
+### 完成时间：2026-02-14
+
+### 功能概述
+
+在回测过程中引入 AI Agent 量化助手，实现自动策略分析和参数优化。
+
+### 实现细节
+
+**1. 后端 Agent 回测集成**
+
+- `TradingAgent` 新增 `analyze_for_backtest()` 方法
+  - 接收最近交易记录和当前参数
+  - 计算胜率、盈亏等统计指标
+  - 调用 LLM 分析是否需要调整参数
+  - 返回结构化的分析结果（JSON）
+
+- `Backtester` 新增 `run_stream_with_agent()` 方法
+  - 在指定检测周期（默认30天）触发 Agent 分析
+  - 如果 Agent 建议调整参数，更新策略参数
+  - 通过 SSE 推送 Agent 事件（analyzing/adjusted/no_change）
+
+- `BaseStrategy` 新增 `update_params()` 方法
+- `MAStrategy` 重写 `update_params()` 以重置均线状态
+
+**2. 后端 API 更新**
+
+回测 SSE 端点新增参数：
+```
+GET /api/backtest/stream
+  ?agent_enabled=true       # 启用 Agent
+  &agent_interval=30        # 检测周期（天）
+```
+
+新增 SSE 消息类型：
+```json
+{
+  "type": "agent",
+  "data": {
+    "action": "analyzing|adjusted|no_change",
+    "message": "分析内容",
+    "params_before": {...},  // 调整前参数
+    "params_after": {...}    // 调整后参数
+  }
+}
+```
+
+**3. 前端配置 UI**
+
+- 回测配置区域新增：
+  - Agent 启用开关（复选框）
+  - Agent 检测周期输入框
+
+**4. 前端消息流**
+
+- `backtestStore` 新增：
+  - `AgentMessage` 类型定义
+  - `messages` 统一消息流数组
+  - `agentEnabled` / `agentInterval` 配置
+
+- `BacktestStream.tsx` 更新：
+  - 渲染 trade 和 agent 两种消息类型
+  - Agent 消息卡片显示分析内容和参数变化
+
+**5. Agent 消息卡片样式**
+
+- 三种状态样式：
+  - `analyzing`：黄色边框，分析中
+  - `adjusted`：绿色边框，参数已调整
+  - `no_change`：灰色边框，保持不变
+- 参数变化对比展示（红色→绿色）
+- 渐变背景 + 动画效果
+
+### 涉及文件
+
+**后端**：
+- `AgentTrader/src/agent/trading_agent.py` (新增 analyze_for_backtest)
+- `AgentTrader/src/strategy/backtest.py` (新增 run_stream_with_agent)
+- `AgentTrader/src/strategy/base.py` (新增 update_params)
+- `AgentTrader/src/strategy/ma_strategy.py` (重写 update_params)
+- `AgentTrader/src/api/routers/backtest.py` (新增 agent 参数)
+
+**前端**：
+- `src/stores/backtestStore.ts` (新增 Agent 状态和消息)
+- `src/pages/backtest/BacktestStream.tsx` (新增 Agent UI)
+- `src/pages/backtest/BacktestStream.css` (新增 Agent 样式)

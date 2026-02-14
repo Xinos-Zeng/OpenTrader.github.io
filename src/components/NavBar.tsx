@@ -14,7 +14,8 @@ export default function NavBar() {
 
   const navItems = [
     { path: '/dashboard', label: '策略' },
-    { path: '/backtest', label: '回测' },
+    { path: '/backtest/stream', label: '回测' },
+    { path: '/favorites', label: '收藏' },
   ];
 
   const isActive = (path: string) => location.pathname.startsWith(path);

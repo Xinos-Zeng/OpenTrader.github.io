@@ -1,12 +1,17 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
+import { useStrategyStore } from './stores/strategyStore';
+
+// Components
+import Toast from './components/Toast';
 
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import BacktestSetup from './pages/backtest/BacktestSetup';
-import BacktestResult from './pages/backtest/BacktestResult';
+import BacktestStream from './pages/backtest/BacktestStream';
+import Favorites from './pages/Favorites';
+import FavoriteDetail from './pages/FavoriteDetail';
 
 // 路由守卫组件
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -29,9 +34,25 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// 全局 Toast 组件
+function GlobalToast() {
+  const { toast, clearToast } = useStrategyStore();
+  
+  if (!toast) return null;
+  
+  return (
+    <Toast
+      message={toast.text}
+      type={toast.type}
+      onClose={clearToast}
+    />
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <GlobalToast />
       <Routes>
         {/* 公开路由 */}
         <Route
@@ -60,19 +81,32 @@ export default function App() {
             </PrivateRoute>
           }
         />
+        {/* 回测路由 - 统一使用流式回测页面 */}
         <Route
-          path="/backtest"
+          path="/backtest/stream"
           element={
             <PrivateRoute>
-              <BacktestSetup />
+              <BacktestStream />
             </PrivateRoute>
           }
         />
         <Route
-          path="/backtest/result"
+          path="/backtest"
+          element={<Navigate to="/backtest/stream" replace />}
+        />
+        <Route
+          path="/favorites"
           element={
             <PrivateRoute>
-              <BacktestResult />
+              <Favorites />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/favorites/:id"
+          element={
+            <PrivateRoute>
+              <FavoriteDetail />
             </PrivateRoute>
           }
         />
