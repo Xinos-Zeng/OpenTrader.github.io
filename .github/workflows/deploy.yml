@@ -30,7 +30,7 @@ jobs:
         run: npm run build
         env:
           CI: false
-          REACT_APP_API_URL: ${{ secrets.API_URL }}
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
 
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
