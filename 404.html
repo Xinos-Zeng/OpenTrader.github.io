@@ -5,24 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenTrader</title>
   <script>
-    // GitHub Pages SPA 重定向
-    // 将当前路径存储到 sessionStorage，然后重定向到首页
-    // 首页的脚本会读取这个路径并使用 History API 恢复
-    var pathSegmentsToKeep = 0; // GitHub Pages 项目页面设为1，用户页面设为0
+    // GitHub Pages SPA 404 重定向
+    // 当访问不存在的路径时（如刷新 /dashboard），GitHub Pages 会显示此 404 页面
+    // 我们将路径信息编码到 URL 参数中，然后重定向到首页
+    // 首页会解析参数并恢复原始路径
     
-    var l = window.location;
-    var repo = l.pathname.split('/')[1]; // 获取仓库名
-    
-    // 存储完整路径（不包括仓库名前缀）
-    var redirectPath = l.pathname.slice(1);
-    
-    // 对于 user.github.io 类型的仓库，直接存储路径
-    sessionStorage.setItem('redirect', redirectPath + l.search + l.hash);
-    
-    // 重定向到首页
-    l.replace(l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') + '/');
+    (function() {
+      var location = window.location;
+      
+      // 获取当前路径（去掉开头的 /）
+      var path = location.pathname.substring(1);
+      var query = location.search || '';
+      var hash = location.hash || '';
+      
+      // 如果已经在首页或没有路径，直接加载首页
+      if (!path || path === 'index.html') {
+        return;
+      }
+      
+      // 将路径编码到 URL 参数中
+      var redirectUrl = location.origin + '/?p=' + encodeURIComponent(path + query + hash);
+      
+      // 使用 replace 避免在浏览器历史中留下记录
+      location.replace(redirectUrl);
+    })();
   </script>
 </head>
 <body>
+  <noscript>正在重定向...</noscript>
 </body>
 </html>
