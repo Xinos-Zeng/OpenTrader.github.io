@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavBar from '../../components/NavBar';
 import { Modal } from '../../components/Modal';
+import { Select, DatePicker, Checkbox } from '../../components/FormControls';
 import { useStrategyStore } from '../../stores/strategyStore';
 import { useBacktestStore, type StreamMessage } from '../../stores/backtestStore';
 import { favoritesApi } from '../../api/favorites';
@@ -44,6 +45,9 @@ export default function BacktestStream() {
   // 消息详情弹窗
   const [showDetailModal, setShowDetailModal] = useState(false);
   const detailListRef = useRef<HTMLDivElement>(null);
+  
+  // 帮助说明弹窗
+  const [showHelpModal, setShowHelpModal] = useState(false);
   
   // 检查是否已选择策略
   useEffect(() => {
@@ -172,35 +176,36 @@ export default function BacktestStream() {
           
           <div className="config-row">
             <label>期货品种</label>
-            <select
+            <Select
               value={config.symbol}
-              onChange={(e) => setConfig({ symbol: e.target.value })}
+              onChange={(value) => setConfig({ symbol: value })}
               disabled={isRunning}
-            >
-              <option value="SHFE.rb2505">螺纹钢 rb2505</option>
-              <option value="SHFE.au2506">黄金 au2506</option>
-              <option value="DCE.m2505">豆粕 m2505</option>
-              <option value="CZCE.CF505">棉花 CF505</option>
-            </select>
+              options={[
+                { value: 'SHFE.rb2505', label: '螺纹钢 rb2505' },
+                { value: 'SHFE.au2506', label: '黄金 au2506' },
+                { value: 'DCE.m2505', label: '豆粕 m2505' },
+                { value: 'CZCE.CF505', label: '棉花 CF505' },
+              ]}
+            />
           </div>
           
           <div className="config-row dates">
             <div>
               <label>开始日期</label>
-              <input
-                type="date"
+              <DatePicker
                 value={config.startDate}
-                onChange={(e) => setConfig({ startDate: e.target.value })}
+                onChange={(value) => setConfig({ startDate: value })}
                 disabled={isRunning}
+                max={config.endDate}
               />
             </div>
             <div>
               <label>结束日期</label>
-              <input
-                type="date"
+              <DatePicker
                 value={config.endDate}
-                onChange={(e) => setConfig({ endDate: e.target.value })}
+                onChange={(value) => setConfig({ endDate: value })}
                 disabled={isRunning}
+                min={config.startDate}
               />
             </div>
           </div>
@@ -262,15 +267,12 @@ export default function BacktestStream() {
           {/* Agent 配置 - 固定布局避免勾选时跳动 */}
           <div className="config-row agent-config">
             <div className="agent-toggle">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={config.agentEnabled}
-                  onChange={(e) => setConfig({ agentEnabled: e.target.checked })}
-                  disabled={isRunning}
-                />
-                <span>启用 Agent 量化助手</span>
-              </label>
+              <Checkbox
+                checked={config.agentEnabled}
+                onChange={(checked) => setConfig({ agentEnabled: checked })}
+                disabled={isRunning}
+                label="启用 Agent 量化助手"
+              />
             </div>
             <div className={`agent-interval-inline ${!config.agentEnabled ? 'disabled' : ''}`}>
               <span className="interval-label">检测周期</span>
@@ -303,7 +305,17 @@ export default function BacktestStream() {
         <div className="message-section">
           <div className="message-header">
             <div className="header-left">
-              <h3>交易信号 {config.agentEnabled && <span className="agent-badge">🤖 Agent 已启用</span>}</h3>
+              <h3>
+                交易信号 
+                {config.agentEnabled && <span className="agent-badge">🤖 Agent 已启用</span>}
+                <button 
+                  className="help-btn" 
+                  onClick={() => setShowHelpModal(true)}
+                  title="查看字段说明"
+                >
+                  ?
+                </button>
+              </h3>
               {isRunning && currentDate && (
                 <span className="progress-date">正在回测: {currentDate}</span>
               )}
@@ -637,6 +649,64 @@ export default function BacktestStream() {
           </div>
         </div>
       )}
+      
+      {/* 帮助说明弹窗 */}
+      <Modal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        title="📊 字段说明"
+      >
+        <div className="help-content">
+          <h4>交易卡片字段</h4>
+          <div className="help-section">
+            <div className="help-item">
+              <span className="help-label">余额 (Balance)</span>
+              <span className="help-desc">当前账户权益 = 初始资金 + 累计平仓盈亏 + 浮动盈亏 - 手续费</span>
+            </div>
+            <div className="help-item">
+              <span className="help-label">平仓盈亏 (Trade PnL)</span>
+              <span className="help-desc">本次平仓交易的盈亏，只有平仓时才显示。开仓时不显示此字段</span>
+            </div>
+            <div className="help-item">
+              <span className="help-label">累计盈亏 (Realized PnL)</span>
+              <span className="help-desc">所有已平仓交易的盈亏总和（不包含当前持仓的浮动盈亏）</span>
+            </div>
+            <div className="help-item">
+              <span className="help-label">浮动盈亏 (Floating PnL)</span>
+              <span className="help-desc">当前持仓的未实现盈亏，随市场价格实时变动</span>
+            </div>
+            <div className="help-item">
+              <span className="help-label">持仓市值 (Market Value)</span>
+              <span className="help-desc">当前持仓的市场价值 = |持仓量| × 价格 × 合约乘数</span>
+            </div>
+          </div>
+          
+          <h4>统计结果字段</h4>
+          <div className="help-section">
+            <div className="help-item">
+              <span className="help-label">总交易次数</span>
+              <span className="help-desc">回测期间产生的所有交易信号数量（包含开仓和平仓）</span>
+            </div>
+            <div className="help-item">
+              <span className="help-label">胜率</span>
+              <span className="help-desc">盈利平仓次数 / 总平仓次数 × 100%（只计算平仓交易）</span>
+            </div>
+            <div className="help-item">
+              <span className="help-label">总盈亏</span>
+              <span className="help-desc">最终权益 - 初始资金（包含已实现和未实现盈亏）</span>
+            </div>
+            <div className="help-item">
+              <span className="help-label">最大回撤</span>
+              <span className="help-desc">从最高点到最低点的最大跌幅百分比，衡量风险水平</span>
+            </div>
+          </div>
+          
+          <div className="help-note">
+            <span className="note-icon">💡</span>
+            <span>所有数据均来自 TqSdk 模拟交易引擎的真实计算结果</span>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

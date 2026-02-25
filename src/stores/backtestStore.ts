@@ -169,6 +169,7 @@ export const useBacktestStore = create<BacktestState>((set, get) => ({
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'text/event-stream',
+        'ngrok-skip-browser-warning': 'true',  // 跳过 ngrok 免费版警告页面
       },
     }).then(async (response) => {
       if (!response.ok) {

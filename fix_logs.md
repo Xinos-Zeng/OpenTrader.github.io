@@ -4,11 +4,80 @@
 修复后不需要你重启服务，我会自己重启。
 
 ### 待修复/优化
-（无）
+1. 回测界面的启用Agent助手按钮点击后没有被勾选，并且这个勾选框不知道是不是高度问题，看起来和旁边的"启用Agent量化助手"不在同一个水平线上，而且相隔太近了。
 
 ---
 
 ### 已修复
+
+**合约乘数硬编码问题** [后端]
+   - 问题：合约乘数写死为 10（螺纹钢），但用户可以选择不同期货品种
+   - 原因：不同期货品种合约乘数不同（如黄金 1000、豆粕 10、棉花 5 等）
+   - 修复：`AgentTrader/src/strategy/backtest.py`
+     - 使用 `api.get_quote(symbol)` 获取合约信息
+     - 从 `quote.volume_multiple` 获取真实合约乘数
+     - `run_stream` 和 `run_stream_with_agent` 均已更新
+   - 效果：自动适配不同期货品种的合约乘数
+
+**自定义表单控件组件** [前端]
+   - 问题：原生 select 和 date input 在某些浏览器下会闪现黑框，且样式不现代化
+   - 原因：原生控件受系统主题影响，CSS 无法完全覆盖
+   - 修复：创建完全自定义的组件替代原生控件
+     - 新增 `src/components/FormControls.tsx`：自定义 `Select` 和 `DatePicker` 组件
+     - 新增 `src/components/FormControls.css`：组件样式
+     - 修改 `src/pages/backtest/BacktestStream.tsx`：使用新组件
+   - 特点：
+     - 纯 div 实现，不使用原生 select/input[type=date]
+     - 下拉框带动画、选中状态、搜索图标
+     - 日期选择器带完整日历、年月导航、今天快捷按钮
+     - 统一的现代化设计风格
+
+**回测数据统计与 TqSdk 日志不匹配** [后端]
+   - 问题：前端显示的余额、累计盈亏、胜率、最大回撤等数据与后端 TqSdk 日志不一致
+   - 原因：
+     1. `total_profit` 使用了 `final_close_profit`（仅平仓盈亏），而非 `final_balance - init_balance`（总盈亏）
+     2. 胜率计算把开仓交易（`trade_pnl=0`）也计入了
+     3. `market_value` 计算没有使用合约乘数
+   - 修复：`AgentTrader/src/strategy/backtest.py`
+     - `total_profit` 改为 `final_balance - init_balance`（总盈亏包含浮动盈亏）
+     - 胜率只计算有实际盈亏的平仓交易（`trade_pnl != 0`）
+     - `market_value` 正确计算为 `abs(净持仓) * 价格 * 合约乘数`
+   - 效果：前端显示数据与 TqSdk 日志一致
+
+**GitHub Pages SPA 刷新 404 问题 v2** [前端]
+   - 问题：之前的 sessionStorage 方案在某些情况下不生效
+   - 原因：sessionStorage 在跨页面时可能丢失，特别是在 GitHub Pages 上
+   - 修复：改用 URL 参数方案
+     - `public/404.html`：将原始路径编码到 URL 参数 `?p=` 中，然后重定向到首页
+     - `public/index.html`：读取 URL 参数并使用 History API 恢复原始路径
+   - 原理：URL 参数在重定向过程中不会丢失，比 sessionStorage 更可靠
+
+**下拉框和日期选择器黑框闪现** [前端]
+   - 问题：下拉框和日期选择器在点击时会闪现黑框，样式与现代化设计不匹配
+   - 原因：浏览器暗色模式下原生表单控件会先渲染深色样式，再应用自定义样式
+   - 修复：
+     - `src/index.css`：在 `html` 和 `:root` 添加 `color-scheme: light only` 强制亮色
+     - `src/pages/backtest/BacktestStream.css`：
+       - 为 select/input 添加 `color-scheme: light only` 和 `forced-color-adjust: none`
+       - 添加 `!important` 强制背景色为白色
+       - 优化日期选择器图标交互效果
+   - 效果：表单控件不再闪黑框，样式统一现代化
+
+**GitHub Pages SPA 刷新 404 问题** [前端]
+   - 问题：在 GitHub Pages 上刷新非首页路由（如 `/dashboard`）会显示 404
+   - 原因：GitHub Pages 是静态托管，不支持 SPA 路由重写，刷新时会尝试访问不存在的 HTML 文件
+   - 修复：
+     - 新增 `public/404.html`：捕获 404 请求，将路径存入 `sessionStorage` 后重定向到首页
+     - 修改 `public/index.html`：在 React 加载前从 `sessionStorage` 读取路径，使用 History API 恢复原始 URL
+   - 原理：利用 GitHub Pages 会自动使用 404.html 处理不存在的路径这一特性
+
+**ngrok 请求返回 HTML 警告页面** [前端]
+   - 问题：请求后端返回 200，但响应内容是 ngrok 的浏览器警告页面而非 JSON 数据
+   - 原因：ngrok 免费版会在首次访问时显示安全警告页面（ERR_NGROK_6024）
+   - 修复：
+     - `src/api/client.ts`：在 axios 实例的默认 headers 中添加 `'ngrok-skip-browser-warning': 'true'`，同时为 token 刷新请求也添加此 header
+     - `src/stores/backtestStore.ts`：回测流式请求使用原生 fetch API 而非 axios，需单独添加此 header
+   - 效果：所有 API 请求（包括流式 SSE）会自动跳过 ngrok 警告页面
 
 **TqSim 回测数据显示修复** [后端]
    - 问题：回测结果中累计盈亏、总盈亏、最大回撤等数据都显示为 0

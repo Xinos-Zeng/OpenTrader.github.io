@@ -8,6 +8,8 @@ export const api = axios.create({
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    // 跳过 ngrok 免费版的浏览器警告页面
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 
@@ -37,7 +39,8 @@ api.interceptors.response.use(
         try {
           const response = await axios.post<ApiResponse<{ access_token: string; refresh_token: string }>>(
             `${API_BASE_URL}/api/auth/refresh`,
-            { refresh_token: refreshToken }
+            { refresh_token: refreshToken },
+            { headers: { 'ngrok-skip-browser-warning': 'true' } }
           );
           
           if (response.data.data) {
