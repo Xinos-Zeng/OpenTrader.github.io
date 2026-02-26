@@ -268,11 +268,11 @@ export default function BacktestStream() {
           <div className="config-row agent-config">
             <div className="agent-toggle">
               <Checkbox
-                checked={config.agentEnabled}
+                  checked={config.agentEnabled}
                 onChange={(checked) => setConfig({ agentEnabled: checked })}
-                disabled={isRunning}
+                  disabled={isRunning}
                 label="启用 Agent 量化助手"
-              />
+                />
             </div>
             <div className={`agent-interval-inline ${!config.agentEnabled ? 'disabled' : ''}`}>
               <span className="interval-label">检测周期</span>

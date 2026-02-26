@@ -11,6 +11,7 @@
   cursor: pointer;
   user-select: none;
   outline: none;
+  height: 24px; /* 固定高度防止勾选时抖动 */
 }
 
 .custom-checkbox:focus-visible .checkbox-box {
@@ -23,16 +24,17 @@
 }
 
 .checkbox-box {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 2px solid #d1d5db;
   border-radius: 4px;
   background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
+  position: relative;
 }
 
 .custom-checkbox:hover:not(.disabled) .checkbox-box {
@@ -46,28 +48,17 @@
 
 .checkbox-icon {
   color: #ffffff;
-  animation: checkmark-pop 0.15s ease-out;
-}
-
-@keyframes checkmark-pop {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .checkbox-text {
   font-size: 14px;
   font-weight: 500;
   color: #111827;
-  line-height: 20px;
+  line-height: 24px;
 }
 
 .custom-checkbox.disabled .checkbox-text {
