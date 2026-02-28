@@ -1,0 +1,240 @@
+.leaderboard-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--color-gray-100);
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.leaderboard-header {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  padding: 16px 20px;
+  color: white;
+}
+
+.leaderboard-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.leaderboard-loading,
+.leaderboard-error {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-gray-500);
+}
+
+.leaderboard-list {
+  padding: 12px 16px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  background: transparent;
+  transition: all 0.2s ease;
+  animation: slideIn 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.leaderboard-item:hover {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.leaderboard-item.top3 {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);
+}
+
+.leaderboard-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 排名徽章 */
+.rank-badge {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rank-icon {
+  font-size: 20px;
+}
+
+.rank-number {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  background: var(--color-gray-100);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 用户信息 */
+.user-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.user-avatar {
+  font-size: 20px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-avatar.default {
+  background: var(--color-gray-100);
+  border-radius: 50%;
+  font-size: 14px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mock-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: rgba(16, 185, 129, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* 收益率 */
+.return-rate {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 70px;
+  text-align: right;
+}
+
+.return-rate.profit {
+  color: var(--color-success);
+}
+
+.return-rate.loss {
+  color: var(--color-danger);
+}
+
+/* 我的排名 */
+.my-ranking {
+  margin: 0 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border-radius: 10px;
+  border: 1px dashed var(--color-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.my-ranking-label {
+  font-size: 13px;
+  color: var(--color-gray-700);
+  font-weight: 500;
+}
+
+.my-ranking-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.my-rank {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.my-rate {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.my-rate.profit {
+  color: var(--color-success);
+}
+
+.my-rate.loss {
+  color: var(--color-danger);
+}
+
+/* 底部提示 */
+.leaderboard-footer {
+  padding: 12px 16px;
+  text-align: center;
+  border-top: 1px solid var(--color-gray-100);
+  margin-top: 8px;
+}
+
+.leaderboard-footer p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-gray-500);
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  .leaderboard-card {
+    border-radius: 12px;
+  }
+
+  .leaderboard-header {
+    padding: 12px 16px;
+  }
+
+  .leaderboard-header h3 {
+    font-size: 16px;
+  }
+
+  .leaderboard-item {
+    padding: 8px 10px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+
+  .return-rate {
+    font-size: 13px;
+    min-width: 60px;
+  }
+}

@@ -6,6 +6,7 @@ import { strategyApi, UserStrategy } from '../api/strategy';
 import { ConfirmModal } from '../components/Modal';
 import NavBar from '../components/NavBar';
 import StrategyCard from '../components/StrategyCard';
+import LeaderboardCard from '../components/LeaderboardCard';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -86,80 +87,95 @@ export default function Dashboard() {
           <p>选择一个交易策略模板开始回测或模拟交易</p>
         </div>
 
-        {/* 系统策略 */}
-        <section className="strategy-section">
-          <h2>系统策略</h2>
-          {isLoading ? (
-            <div className="loading">
-              <div className="spinner"></div>
-            </div>
-          ) : (
-            <div className="strategy-grid">
-              {strategies.map((strategy) => (
-                <StrategyCard
-                  key={strategy.name}
-                  strategy={strategy}
-                  isSelected={currentStrategy?.name === strategy.name}
-                  onClick={() => handleSelectStrategy(strategy)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-        
-        {/* 我的策略 */}
-        <section className="strategy-section">
-          <h2>我的策略</h2>
-          {loadingUser ? (
-            <div className="loading">
-              <div className="spinner"></div>
-            </div>
-          ) : userStrategies.length === 0 ? (
-            <div className="empty-user-strategies">
-              <p>暂无自定义策略</p>
-              <p className="hint">在回测页面保存策略参数后，会显示在这里</p>
-            </div>
-          ) : (
-            <div className="strategy-grid">
-              {userStrategies.map((us) => {
-                const isSelected = currentStrategy?.name === `user_${us.id}`;
-                return (
-                  <div 
-                    key={us.id}
-                    className={`user-strategy-card card card-hover ${isSelected ? 'selected' : ''}`}
-                    onClick={() => handleSelectUserStrategy(us)}
-                  >
-                    {isSelected && <span className="selected-badge">✓ 已选择</span>}
-                    <div className="card-header">
-                      <h3>{us.name}</h3>
-                      <button 
-                        className="delete-btn"
-                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(us); }}
+        <div className="dashboard-layout">
+          {/* 左侧：策略选择区 */}
+          <div className="strategy-area">
+            {/* 系统策略 */}
+            <section className="strategy-section">
+              <h2>系统策略</h2>
+              {isLoading ? (
+                <div className="loading">
+                  <div className="spinner"></div>
+                </div>
+              ) : (
+                <div className="strategy-grid">
+                  {strategies.map((strategy) => (
+                    <StrategyCard
+                      key={strategy.name}
+                      strategy={strategy}
+                      isSelected={currentStrategy?.name === strategy.name}
+                      onClick={() => handleSelectStrategy(strategy)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+            
+            {/* 我的策略 */}
+            <section className="strategy-section">
+              <h2>我的策略</h2>
+              {loadingUser ? (
+                <div className="loading">
+                  <div className="spinner"></div>
+                </div>
+              ) : userStrategies.length === 0 ? (
+                <div className="empty-user-strategies">
+                  <p>暂无自定义策略</p>
+                  <p className="hint">在回测页面保存策略参数后，会显示在这里</p>
+                </div>
+              ) : (
+                <div className="strategy-grid">
+                  {userStrategies.map((us) => {
+                    const isSelected = currentStrategy?.name === `user_${us.id}`;
+                    return (
+                      <div 
+                        key={us.id}
+                        className={`user-strategy-card card card-hover ${isSelected ? 'selected' : ''}`}
+                        onClick={() => handleSelectUserStrategy(us)}
                       >
-                        ×
-                      </button>
-                    </div>
-                    <p className="card-desc">{us.description || `基于 ${us.base_strategy}`}</p>
-                    <div className="card-params">
-                      {Object.entries(us.params).slice(0, 3).map(([key, value]) => (
-                        <span key={key} className="param-tag">{key}: {String(value)}</span>
-                      ))}
-                    </div>
-                    <div className="card-time">{us.created_at}</div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+                        {isSelected && <span className="selected-badge">✓ 已选择</span>}
+                        <div className="card-header">
+                          <h3>{us.name}</h3>
+                          <button 
+                            className="delete-btn"
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(us); }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <p className="card-desc">{us.description || `基于 ${us.base_strategy}`}</p>
+                        <div className="card-params">
+                          {Object.entries(us.params).slice(0, 3).map(([key, value]) => (
+                            <span key={key} className="param-tag">{key}: {String(value)}</span>
+                          ))}
+                        </div>
+                        {us.return_rate !== undefined && us.return_rate !== null && (
+                          <div className={`card-return-rate ${us.return_rate >= 0 ? 'profit' : 'loss'}`}>
+                            收益率: {us.return_rate >= 0 ? '+' : ''}{us.return_rate.toFixed(1)}%
+                          </div>
+                        )}
+                        <div className="card-time">{us.created_at}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
 
-        {currentStrategy && (
-          <div className="action-bar">
-            <button onClick={handleStartBacktest} className="btn btn-primary">
-              开始回测
-            </button>
+            {currentStrategy && (
+              <div className="action-bar">
+                <button onClick={handleStartBacktest} className="btn btn-primary">
+                  开始回测
+                </button>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* 右侧：排行榜 */}
+          <aside className="leaderboard-area">
+            <LeaderboardCard />
+          </aside>
+        </div>
       </main>
       
       {/* 删除确认弹窗 */}

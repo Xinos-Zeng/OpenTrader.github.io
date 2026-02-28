@@ -8,6 +8,14 @@ export interface UserStrategy {
   base_strategy: string;
   description?: string;
   params: Record<string, unknown>;
+  // 回测指标
+  return_rate?: number;
+  total_profit?: number;
+  win_rate?: number;
+  max_drawdown?: number;
+  backtest_symbol?: string;
+  backtest_start?: string;
+  backtest_end?: string;
   created_at: string;
 }
 
@@ -16,6 +24,14 @@ export interface CreateStrategyRequest {
   base_strategy: string;
   description?: string;
   params: Record<string, unknown>;
+  // 回测指标（用于排行榜）
+  return_rate?: number;
+  total_profit?: number;
+  win_rate?: number;
+  max_drawdown?: number;
+  backtest_symbol?: string;
+  backtest_start?: string;
+  backtest_end?: string;
 }
 
 export const strategyApi = {

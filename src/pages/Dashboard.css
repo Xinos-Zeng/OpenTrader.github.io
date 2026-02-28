@@ -24,6 +24,23 @@
   margin: 4px 0 0 0;
 }
 
+/* Dashboard 两栏布局 */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.strategy-area {
+  min-width: 0;
+}
+
+.leaderboard-area {
+  position: sticky;
+  top: 80px;
+}
+
 .loading {
   display: flex;
   align-items: center;
@@ -133,6 +150,20 @@
   color: var(--color-gray-500);
 }
 
+.user-strategy-card .card-return-rate {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.user-strategy-card .card-return-rate.profit {
+  color: var(--color-success);
+}
+
+.user-strategy-card .card-return-rate.loss {
+  color: var(--color-danger);
+}
+
 .user-strategy-card.selected {
   border-color: var(--color-primary) !important;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -180,6 +211,20 @@
   justify-content: flex-end;
 }
 
+/* 平板响应式 */
+@media (max-width: 1024px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .leaderboard-area {
+    position: static;
+    order: -1;
+    margin-bottom: 8px;
+  }
+}
+
+/* 移动端响应式 */
 @media (max-width: 640px) {
   .strategy-grid {
     grid-template-columns: 1fr;
@@ -194,9 +239,14 @@
     border-top: 1px solid var(--color-gray-100);
     padding: 16px;
     margin: 0;
+    z-index: 100;
   }
   
   .action-bar .btn {
     width: 100%;
+  }
+
+  .strategy-area {
+    padding-bottom: 80px;
   }
 }

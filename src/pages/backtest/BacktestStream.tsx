@@ -139,6 +139,12 @@ export default function BacktestStream() {
     
     setIsSavingStrategy(true);
     try {
+      // 计算收益率
+      let return_rate: number | undefined;
+      if (stats && config.initBalance > 0) {
+        return_rate = ((stats.final_balance - config.initBalance) / config.initBalance) * 100;
+      }
+      
       await strategyApi.createUserStrategy({
         name: strategyName,
         base_strategy: config.strategy,
@@ -147,6 +153,14 @@ export default function BacktestStream() {
           fast_period: config.fastPeriod,
           slow_period: config.slowPeriod,
         },
+        // 回测指标（用于排行榜）
+        return_rate: return_rate,
+        total_profit: stats?.total_profit,
+        win_rate: stats ? parseFloat(stats.win_rate) : undefined,
+        max_drawdown: stats?.max_drawdown,
+        backtest_symbol: config.symbol,
+        backtest_start: config.startDate,
+        backtest_end: config.endDate,
       });
       
       showToast('策略保存成功！', 'success');
