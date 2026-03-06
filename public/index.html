@@ -8,17 +8,16 @@
   <title>OpenTrader</title>
   <script>
     // GitHub Pages SPA 路由恢复
-    // 从 URL 参数中读取 404.html 传来的原始路径
+    // 从 sessionStorage 读取 404.html 存储的原始路径
     (function() {
-      var params = new URLSearchParams(window.location.search);
-      var redirectPath = params.get('p');
+      var redirectPath = sessionStorage.getItem('spa_redirect_path');
       
       if (redirectPath) {
-        // 解码路径
-        var decodedPath = decodeURIComponent(redirectPath);
+        // 清除存储，防止重复恢复
+        sessionStorage.removeItem('spa_redirect_path');
         
         // 使用 History API 恢复原始路径（不刷新页面）
-        window.history.replaceState(null, '', '/' + decodedPath);
+        window.history.replaceState(null, '', redirectPath);
       }
     })();
   </script>

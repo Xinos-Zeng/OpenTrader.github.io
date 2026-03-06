@@ -10,6 +10,15 @@
 
 ### 已修复
 
+**GitHub Pages 刷新 404 问题 v3** [前端]
+   - 问题：刷新 `/dashboard` 等路由显示 404
+   - 原因：之前的 URL 参数方案 (`?p=path`) 可能被某些情况下清除
+   - 修复：改用 `sessionStorage` 方案
+     - `public/404.html`：将完整路径存入 `sessionStorage`，然后重定向到首页
+     - `public/index.html`：读取 `sessionStorage` 恢复路径，然后立即清除
+   - 优势：`sessionStorage` 在同一标签页内持久，比 URL 参数更可靠
+   - 注意：需要重新 `npm run build` 并部署
+
 **代码复制成功提示** [前端]
    - 问题：点击复制代码后没有反馈
    - 修复：`src/components/CodeBlock.tsx`
