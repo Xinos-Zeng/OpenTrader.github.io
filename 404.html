@@ -7,27 +7,25 @@
   <script>
     // GitHub Pages SPA 404 重定向
     // 当访问不存在的路径时（如刷新 /dashboard），GitHub Pages 会显示此 404 页面
-    // 我们将路径信息编码到 URL 参数中，然后重定向到首页
-    // 首页会解析参数并恢复原始路径
+    // 我们将完整路径信息存储到 sessionStorage，然后重定向到首页
+    // 首页会读取并恢复原始路径
     
     (function() {
-      var location = window.location;
+      var loc = window.location;
       
-      // 获取当前路径（去掉开头的 /）
-      var path = location.pathname.substring(1);
-      var query = location.search || '';
-      var hash = location.hash || '';
+      // 获取完整路径（包括子路径）
+      var fullPath = loc.pathname + loc.search + loc.hash;
       
-      // 如果已经在首页或没有路径，直接加载首页
-      if (!path || path === 'index.html') {
+      // 如果已经在首页，不做处理
+      if (fullPath === '/' || fullPath === '/index.html') {
         return;
       }
       
-      // 将路径编码到 URL 参数中
-      var redirectUrl = location.origin + '/?p=' + encodeURIComponent(path + query + hash);
+      // 存储完整路径到 sessionStorage
+      sessionStorage.setItem('spa_redirect_path', fullPath);
       
-      // 使用 replace 避免在浏览器历史中留下记录
-      location.replace(redirectUrl);
+      // 重定向到首页
+      loc.replace(loc.origin + '/');
     })();
   </script>
 </head>
