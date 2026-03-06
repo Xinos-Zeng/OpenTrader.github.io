@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import BacktestStream from './pages/backtest/BacktestStream';
 import Favorites from './pages/Favorites';
 import FavoriteDetail from './pages/FavoriteDetail';
+import Agent from './pages/Agent';
 
 // 路由守卫组件
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -93,6 +94,14 @@ export default function App() {
         <Route
           path="/backtest"
           element={<Navigate to="/backtest/stream" replace />}
+        />
+        <Route
+          path="/agent"
+          element={
+            <PrivateRoute>
+              <Agent />
+            </PrivateRoute>
+          }
         />
         <Route
           path="/favorites"

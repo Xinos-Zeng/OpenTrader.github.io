@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useStrategyStore } from '../stores/strategyStore';
+import { useChatStore, AttachedStrategy } from '../stores/chatStore';
 import { strategyApi, UserStrategy } from '../api/strategy';
 import { ConfirmModal } from '../components/Modal';
 import NavBar from '../components/NavBar';
 import StrategyCard from '../components/StrategyCard';
 import LeaderboardCard from '../components/LeaderboardCard';
+import StrategyDetailModal from '../components/StrategyDetailModal';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -21,12 +23,16 @@ export default function Dashboard() {
     isLoading,
     showToast
   } = useStrategyStore();
+  const { setAttachedStrategy } = useChatStore();
   
   // 用户自定义策略
   const [userStrategies, setUserStrategies] = useState<UserStrategy[]>([]);
   const [loadingUser, setLoadingUser] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UserStrategy | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // 策略详情弹窗
+  const [detailStrategy, setDetailStrategy] = useState<UserStrategy | null>(null);
 
   useEffect(() => {
     fetchUser();
@@ -75,6 +81,73 @@ export default function Dashboard() {
     if (currentStrategy) {
       navigate('/backtest/stream');
     }
+  };
+  
+  // 查看策略详情
+  const handleViewDetail = async (us: UserStrategy) => {
+    // 如果策略没有 code，需要从后端获取
+    if (!us.code) {
+      try {
+        const response = await strategyApi.getUserStrategy(us.id);
+        if (response.data) {
+          setDetailStrategy(response.data);
+        }
+      } catch (e) {
+        console.error('获取策略详情失败:', e);
+        showToast('获取策略详情失败', 'error');
+      }
+    } else {
+      setDetailStrategy(us);
+    }
+  };
+  
+  // 优化策略 - 跳转到 AI 助手
+  const handleOptimizeStrategy = async (us: UserStrategy) => {
+    // 如果策略没有 code，先从后端获取完整详情
+    let strategyWithCode = us;
+    if (!us.code) {
+      try {
+        const response = await strategyApi.getUserStrategy(us.id);
+        if (response.data) {
+          strategyWithCode = response.data;
+        } else {
+          showToast('获取策略代码失败', 'error');
+          return;
+        }
+      } catch (e) {
+        console.error('获取策略详情失败:', e);
+        showToast('获取策略代码失败', 'error');
+        return;
+      }
+    }
+    
+    // 检查是否有代码
+    if (!strategyWithCode.code) {
+      showToast('该策略没有可优化的代码', 'warning');
+      return;
+    }
+    
+    // 构建附加策略对象
+    const attachedStrategy: AttachedStrategy = {
+      id: strategyWithCode.id,
+      name: strategyWithCode.name,
+      description: strategyWithCode.description,
+      code: strategyWithCode.code,
+      return_rate: strategyWithCode.return_rate,
+      win_rate: strategyWithCode.win_rate,
+      max_drawdown: strategyWithCode.max_drawdown,
+    };
+    
+    // 跳转到 AI 助手页面，携带策略信息
+    navigate('/agent', {
+      state: { optimizeStrategy: attachedStrategy },
+    });
+  };
+  
+  // 从详情弹窗开始回测
+  const handleBacktestFromDetail = (us: UserStrategy) => {
+    selectUserStrategy(us);
+    navigate('/backtest/stream');
   };
 
   return (
@@ -143,18 +216,29 @@ export default function Dashboard() {
                             ×
                           </button>
                         </div>
-                        <p className="card-desc">{us.description || `基于 ${us.base_strategy}`}</p>
-                        <div className="card-params">
-                          {Object.entries(us.params).slice(0, 3).map(([key, value]) => (
-                            <span key={key} className="param-tag">{key}: {String(value)}</span>
-                          ))}
-                        </div>
+                        <p className="card-desc">{us.description || '用户自定义策略'}</p>
                         {us.return_rate !== undefined && us.return_rate !== null && (
                           <div className={`card-return-rate ${us.return_rate >= 0 ? 'profit' : 'loss'}`}>
                             收益率: {us.return_rate >= 0 ? '+' : ''}{us.return_rate.toFixed(1)}%
                           </div>
                         )}
                         <div className="card-time">{us.created_at}</div>
+                        
+                        {/* 操作按钮 */}
+                        <div className="card-actions">
+                          <button 
+                            className="action-btn detail-btn"
+                            onClick={(e) => { e.stopPropagation(); handleViewDetail(us); }}
+                          >
+                            📋 详情
+                          </button>
+                          <button 
+                            className="action-btn optimize-btn"
+                            onClick={(e) => { e.stopPropagation(); handleOptimizeStrategy(us); }}
+                          >
+                            🔧 优化
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -188,6 +272,15 @@ export default function Dashboard() {
         confirmText="删除"
         confirmType="danger"
         isLoading={isDeleting}
+      />
+      
+      {/* 策略详情弹窗 */}
+      <StrategyDetailModal
+        isOpen={!!detailStrategy}
+        onClose={() => setDetailStrategy(null)}
+        strategy={detailStrategy}
+        onOptimize={handleOptimizeStrategy}
+        onBacktest={handleBacktestFromDetail}
       />
     </div>
   );

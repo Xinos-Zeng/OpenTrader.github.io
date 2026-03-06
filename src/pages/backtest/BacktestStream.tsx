@@ -2,21 +2,34 @@
  * 流式回测页面
  * 
  * 实时显示回测进度和交易信号，支持 Agent 量化助手
+ * 支持从 AI 助手传入策略代码直接回测
  */
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import NavBar from '../../components/NavBar';
 import { Modal } from '../../components/Modal';
 import { Select, DatePicker, Checkbox } from '../../components/FormControls';
 import { useStrategyStore } from '../../stores/strategyStore';
 import { useBacktestStore, type StreamMessage } from '../../stores/backtestStore';
+import { useChatStore, type AttachedStrategy } from '../../stores/chatStore';
 import { favoritesApi } from '../../api/favorites';
 import { strategyApi } from '../../api/strategy';
 import './BacktestStream.css';
 
+// Agent 策略类型
+interface AgentStrategy {
+  name: string;
+  code: string;
+  description: string;
+}
+
 export default function BacktestStream() {
   const navigate = useNavigate();
-  const { currentStrategy, currentParams, showToast } = useStrategyStore();
+  const location = useLocation();
+  const { currentStrategy, showToast } = useStrategyStore();
+  
+  // 从 Agent 传来的策略
+  const agentStrategy = (location.state as { agentStrategy?: AgentStrategy })?.agentStrategy;
   const {
     isRunning,
     currentDate,
@@ -49,21 +62,38 @@ export default function BacktestStream() {
   // 帮助说明弹窗
   const [showHelpModal, setShowHelpModal] = useState(false);
   
-  // 检查是否已选择策略
+  // 初始化策略配置
   useEffect(() => {
-    if (!currentStrategy) {
+    if (agentStrategy) {
+      // 从 AI 助手传入的策略 - 清除其他策略选项
+      setConfig({
+        strategyCode: agentStrategy.code,
+        userStrategyId: undefined,
+        presetId: undefined,
+      });
+    } else if (currentStrategy) {
+      // 从 Dashboard 选择的策略
+      if (currentStrategy.name.startsWith('user_')) {
+        // 用户保存的策略
+        const userId = parseInt(currentStrategy.name.replace('user_', ''), 10);
+        setConfig({
+          userStrategyId: userId,
+          strategyCode: undefined,
+          presetId: undefined,
+        });
+      } else {
+        // 预置策略
+        setConfig({
+          presetId: currentStrategy.name,
+          strategyCode: undefined,
+          userStrategyId: undefined,
+        });
+      }
+    } else {
       showToast('请先选择一个交易策略', 'info');
       navigate('/dashboard');
-    } else if (currentParams) {
-      // 同步策略配置
-      const params = currentParams.params || {};
-      setConfig({
-        strategy: currentStrategy.name,
-        fastPeriod: Number(params.fast_period) || 5,
-        slowPeriod: Number(params.slow_period) || 20,
-      });
     }
-  }, [currentStrategy, currentParams, navigate, showToast, setConfig]);
+  }, [currentStrategy, agentStrategy, navigate, showToast, setConfig]);
   
   // 自动滚动到最新消息
   useEffect(() => {
@@ -86,8 +116,10 @@ export default function BacktestStream() {
     startBacktest();
   };
   
+  const strategyDisplayName = agentStrategy?.name || currentStrategy?.description || currentStrategy?.name || '策略';
+  
   const openSaveModal = () => {
-    setSaveName(`${config.strategy}_${config.symbol}_回测`);
+    setSaveName(`${strategyDisplayName}_${config.symbol}_回测`);
     setShowSaveModal(true);
   };
   
@@ -98,14 +130,11 @@ export default function BacktestStream() {
     try {
       await favoritesApi.create({
         name: saveName,
-        strategy_name: config.strategy,
+        strategy_name: strategyDisplayName,
         symbol: config.symbol,
         start_date: config.startDate,
         end_date: config.endDate,
-        params: {
-          fast_period: config.fastPeriod,
-          slow_period: config.slowPeriod,
-        },
+        params: {},
         trades: trades.map(t => ({
           time: t.time,
           signal: t.signal,
@@ -126,7 +155,7 @@ export default function BacktestStream() {
   };
   
   const openSaveStrategyModal = () => {
-    setStrategyName(`${config.strategy}_自定义`);
+    setStrategyName(`${strategyDisplayName}_自定义`);
     setStrategyDesc('');
     setShowSaveStrategyModal(true);
   };
@@ -137,9 +166,14 @@ export default function BacktestStream() {
       return;
     }
     
+    // 只有 Agent 策略才能保存（因为需要代码）
+    if (!agentStrategy?.code && !config.strategyCode) {
+      showToast('只能保存带有代码的策略', 'warning');
+      return;
+    }
+    
     setIsSavingStrategy(true);
     try {
-      // 计算收益率
       let return_rate: number | undefined;
       if (stats && config.initBalance > 0) {
         return_rate = ((stats.final_balance - config.initBalance) / config.initBalance) * 100;
@@ -147,13 +181,8 @@ export default function BacktestStream() {
       
       await strategyApi.createUserStrategy({
         name: strategyName,
-        base_strategy: config.strategy,
-        description: strategyDesc || undefined,
-        params: {
-          fast_period: config.fastPeriod,
-          slow_period: config.slowPeriod,
-        },
-        // 回测指标（用于排行榜）
+        code: agentStrategy?.code || config.strategyCode || '',
+        description: strategyDesc || agentStrategy?.description,
         return_rate: return_rate,
         total_profit: stats?.total_profit,
         win_rate: stats ? parseFloat(stats.win_rate) : undefined,
@@ -173,7 +202,40 @@ export default function BacktestStream() {
     }
   };
   
-  if (!currentStrategy) return null;
+  // 优化策略 - 跳转到 AI 助手
+  const handleOptimizeStrategy = () => {
+    // 获取当前策略代码
+    const strategyCode = agentStrategy?.code || config.strategyCode;
+    
+    if (!strategyCode) {
+      showToast('当前策略没有代码，无法优化', 'warning');
+      return;
+    }
+    
+    // 计算收益率
+    let return_rate: number | undefined;
+    if (stats && config.initBalance > 0) {
+      return_rate = ((stats.final_balance - config.initBalance) / config.initBalance) * 100;
+    }
+    
+    // 构建附加策略
+    const attachedStrategy: AttachedStrategy = {
+      name: strategyDisplayName,
+      description: agentStrategy?.description,
+      code: strategyCode,
+      return_rate: return_rate,
+      win_rate: stats ? parseFloat(stats.win_rate) : undefined,
+      max_drawdown: stats?.max_drawdown,
+    };
+    
+    // 跳转到 AI 助手，携带策略信息
+    navigate('/agent', {
+      state: { optimizeStrategy: attachedStrategy },
+    });
+  };
+  
+  // 如果既没有预置策略也没有 Agent 策略，不渲染
+  if (!currentStrategy && !agentStrategy) return null;
   
   return (
     <div className="backtest-stream-page">
@@ -185,7 +247,8 @@ export default function BacktestStream() {
           <h2>回测配置</h2>
           
           <div className="config-row">
-            <label>策略：{currentStrategy.description || currentStrategy.name}</label>
+            <label>策略：{strategyDisplayName}</label>
+            {agentStrategy && <span className="agent-strategy-badge">🤖 AI 生成</span>}
           </div>
           
           <div className="config-row">
@@ -220,31 +283,6 @@ export default function BacktestStream() {
                 onChange={(value) => setConfig({ endDate: value })}
                 disabled={isRunning}
                 min={config.startDate}
-              />
-            </div>
-          </div>
-          
-          <div className="config-row params">
-            <div>
-              <label>快线周期</label>
-              <input
-                type="number"
-                value={config.fastPeriod}
-                onChange={(e) => setConfig({ fastPeriod: Number(e.target.value) })}
-                disabled={isRunning}
-                min={1}
-                max={50}
-              />
-            </div>
-            <div>
-              <label>慢线周期</label>
-              <input
-                type="number"
-                value={config.slowPeriod}
-                onChange={(e) => setConfig({ slowPeriod: Number(e.target.value) })}
-                disabled={isRunning}
-                min={1}
-                max={100}
               />
             </div>
           </div>
@@ -477,6 +515,11 @@ export default function BacktestStream() {
               <button className="btn btn-secondary" onClick={openSaveStrategyModal}>
                 ⚙️ 保存策略参数
               </button>
+              {(agentStrategy?.code || config.strategyCode) && (
+                <button className="btn btn-optimize" onClick={handleOptimizeStrategy}>
+                  🔧 优化策略
+                </button>
+              )}
               <button className="btn btn-secondary" onClick={() => navigate('/favorites')}>
                 📋 查看收藏
               </button>
@@ -504,7 +547,7 @@ export default function BacktestStream() {
         <div className="info-list">
           <div className="info-item">
             <span className="label">策略</span>
-            <span className="value">{config.strategy}</span>
+            <span className="value">{strategyDisplayName}</span>
           </div>
           <div className="info-item">
             <span className="label">品种</span>
@@ -550,7 +593,7 @@ export default function BacktestStream() {
       <Modal
         isOpen={showSaveStrategyModal}
         onClose={() => setShowSaveStrategyModal(false)}
-        title="保存策略参数"
+        title="保存策略"
       >
         <div className="form-group">
           <label>策略名称</label>
@@ -574,16 +617,16 @@ export default function BacktestStream() {
         
         <div className="info-list">
           <div className="info-item">
-            <span className="label">基础策略</span>
-            <span className="value">{config.strategy}</span>
+            <span className="label">策略</span>
+            <span className="value">{strategyDisplayName}</span>
           </div>
           <div className="info-item">
-            <span className="label">快线周期</span>
-            <span className="value">{config.fastPeriod}</span>
+            <span className="label">回测品种</span>
+            <span className="value">{config.symbol}</span>
           </div>
           <div className="info-item">
-            <span className="label">慢线周期</span>
-            <span className="value">{config.slowPeriod}</span>
+            <span className="label">回测区间</span>
+            <span className="value">{config.startDate} ~ {config.endDate}</span>
           </div>
         </div>
         

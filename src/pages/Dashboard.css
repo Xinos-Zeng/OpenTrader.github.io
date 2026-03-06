@@ -164,6 +164,51 @@
   color: var(--color-danger);
 }
 
+/* 卡片操作按钮 */
+.user-strategy-card .card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-gray-100);
+}
+
+.user-strategy-card .action-btn {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.user-strategy-card .action-btn.detail-btn {
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.user-strategy-card .action-btn.detail-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.user-strategy-card .action-btn.optimize-btn {
+  color: #7c3aed;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+}
+
+.user-strategy-card .action-btn.optimize-btn:hover {
+  background: #7c3aed;
+  color: white;
+}
+
 .user-strategy-card.selected {
   border-color: var(--color-primary) !important;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);

@@ -1,0 +1,159 @@
+/* 策略详情弹窗样式 */
+.strategy-detail-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-section h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.detail-description {
+  margin: 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+/* 回测指标 */
+.detail-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.metric-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.metric-item.profit .metric-value {
+  color: #059669;
+}
+
+.metric-item.loss .metric-value {
+  color: #dc2626;
+}
+
+.metric-item.warning .metric-value {
+  color: #d97706;
+}
+
+/* 代码区域 */
+.detail-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.detail-code-block {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+/* 操作按钮 */
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.detail-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.optimize-btn {
+  color: #7c3aed;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+}
+
+.optimize-btn:hover {
+  background: #7c3aed;
+  color: white;
+}
+
+.backtest-btn {
+  color: white;
+  background: var(--color-primary, #10b981);
+  border: none;
+}
+
+.backtest-btn:hover {
+  background: #059669;
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  .detail-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .detail-actions {
+    flex-direction: column;
+  }
+  
+  .detail-btn {
+    justify-content: center;
+  }
+}

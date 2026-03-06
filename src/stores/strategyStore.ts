@@ -61,16 +61,16 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
   },
   
   selectUserStrategy: (us) => {
-    // 将用户策略转换为 StrategyInfo 格式
+    // 将用户策略转换为 StrategyInfo 格式，使用 user_strategy_id 标识
     set({
       currentStrategy: {
         name: `user_${us.id}`,
         description: us.name,
-        default_params: us.params as Record<string, number>,
+        default_params: {},
       },
       currentParams: {
-        strategy_name: us.base_strategy,  // 用于回测的实际策略名
-        params: { ...us.params },
+        strategy_name: `user_${us.id}`,
+        params: {},
       },
     });
   },

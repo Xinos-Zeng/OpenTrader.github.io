@@ -31,8 +31,11 @@ api.interceptors.response.use(
   async (error: AxiosError<ApiResponse>) => {
     const originalRequest = error.config;
     
-    // 401 错误 - 尝试刷新 Token
-    if (error.response?.status === 401 && originalRequest) {
+    // 401 错误 - 尝试刷新 Token（仅在非登录/注册请求时）
+    const isAuthRequest = originalRequest?.url?.includes('/api/auth/login') || 
+                          originalRequest?.url?.includes('/api/auth/register');
+    
+    if (error.response?.status === 401 && originalRequest && !isAuthRequest) {
       const refreshToken = localStorage.getItem('refresh_token');
       
       if (refreshToken) {
@@ -58,9 +61,11 @@ api.interceptors.response.use(
           window.location.href = '/login';
         }
       } else {
-        // 没有 refresh token
+        // 没有 refresh token，且不在登录页面才重定向
         localStorage.removeItem('access_token');
-        window.location.href = '/login';
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
       }
     }
     

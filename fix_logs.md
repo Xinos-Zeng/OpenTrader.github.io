@@ -4,11 +4,112 @@
 修复后不需要你重启服务，我会自己重启。
 
 ### 待修复/优化
-1. 回测界面的启用Agent助手按钮点击后没有被勾选，并且这个勾选框不知道是不是高度问题，看起来和旁边的"启用Agent量化助手"不在同一个水平线上，而且相隔太近了。
+（暂无）
 
 ---
 
 ### 已修复
+
+**代码复制成功提示** [前端]
+   - 问题：点击复制代码后没有反馈
+   - 修复：`src/components/CodeBlock.tsx`
+     - 添加 `copied` 状态
+     - 复制成功后按钮变绿显示"✓ 已复制"，2秒后恢复
+   - 样式：`src/components/CodeBlock.css` 添加 `.copied` 状态的绿色样式
+
+**AttachedStrategyCard toFixed 报错** [前端]
+   - 问题：优化策略时附加卡片报错 `Cannot read properties of null`
+   - 原因：同 StrategyDetailModal，指标值可能是 `null`
+   - 修复：`src/components/AttachedStrategyCard.tsx`
+     - 将 `!== undefined` 改为 `!= null`
+
+**策略详情弹窗 toFixed 报错** [前端]
+   - 问题：点击策略详情弹窗报错 `Cannot read properties of null (reading 'toFixed')`
+   - 原因：后端返回的指标值可能是 `null`，使用 `!== undefined` 检查无法过滤 `null`
+   - 修复：`src/components/StrategyDetailModal.tsx`
+     - 将 `!== undefined` 改为 `!= null`（同时过滤 `undefined` 和 `null`）
+   - 效果：策略详情弹窗正常显示，指标为空时不报错
+
+**优化策略未附带代码到 AI 助手** [前端]
+   - 问题：点击"优化策略"跳转到 AI 助手，但没有附加策略卡片
+   - 原因：
+     1. 策略列表 API 没有返回 `code` 字段，需要单独获取详情
+     2. Agent.tsx 中未处理 `location.state` 传入的策略
+   - 修复：
+     - `src/pages/Dashboard.tsx`: `handleOptimizeStrategy` 先获取策略详情再跳转
+     - `src/pages/Agent.tsx`: 添加 useEffect 处理 `location.state.optimizeStrategy`
+   - 效果：点击优化后，AI 助手页面正确显示附加策略卡片
+
+---
+
+### 历史修复
+
+**Agent 生成策略回测报错 "预置策略不存在: user_1"** [前端]
+   - 问题：从 Agent 生成策略后点击回测，报错显示预置策略不存在
+   - 原因：设置 `strategyCode` 时没有清除 `presetId` 和 `userStrategyId`，导致后端尝试错误的策略加载方式
+   - 修复：`src/pages/backtest/BacktestStream.tsx`
+     - 设置策略配置时，同时清除其他策略选项
+     - 修复用户策略 ID 解析逻辑（`user_1` → `userStrategyId: 1`）
+     - 三种策略互斥：`strategyCode` / `userStrategyId` / `presetId`
+   - 效果：Agent 生成的策略可以正常开始回测
+
+**Agent 回复 JSON 策略块应渲染为 Python 代码** [前端]
+   - 问题：Agent 回复的 ```json 策略块直接渲染为 JSON 代码框，而不是 Python 代码
+   - 原因：ChatMessage 组件没有解析 JSON 内容并提取 `code` 字段
+   - 修复：`src/components/ChatMessage.tsx`
+     - 新增 `tryParseStrategyJson()` 函数解析策略 JSON
+     - 检测到 JSON 策略块时，提取 `code` 字段渲染为 Python 代码框
+     - 流式输出时显示 Python 代码，完成后显示策略卡片
+   - 效果：用户看到的是格式化的 Python 代码，而不是 JSON 文本
+
+**Agent 策略卡片不显示 / 一直等待后端** [前端]
+   - 问题：回答生成完后策略卡片不显示，界面一直显示等待状态
+   - 原因：SSE 解析逻辑在流结束时没有正确处理缓冲区中剩余的事件
+   - 修复：`src/api/agent.ts`
+     - 重构 SSE 事件解析逻辑，提取 `processEvent()` 函数
+     - 在流结束后处理缓冲区中剩余的内容
+     - 新事件开始时自动处理上一个事件
+     - 添加 `receivedDone` 标记检测异常断开
+   - 效果：流式完成后正确显示策略卡片和操作按钮
+
+**登录错误提示消失太快** [前端]
+   - 问题：登录失败时错误提示一闪而过
+   - 原因：登录返回 401 时，axios 响应拦截器会触发重定向到 /login，导致页面刷新，error 状态丢失
+   - 修复：`src/api/client.ts` 响应拦截器添加判断，如果是登录/注册请求则不触发 token 刷新和重定向
+   - 效果：登录失败时错误信息持续显示，直到用户关闭或重新输入
+
+**Agent 回复代码渲染 bug** [前端]
+   - 问题：流式输出时显示 ```json 原始文本，然后内容消失，光标闪烁但看不到输出
+   - 原因：ChatMessage 组件的 renderContent 函数在流式输出时过早移除代码块，导致内容消失
+   - 修复：
+     - 重写 `src/components/ChatMessage.tsx` 使用智能解析逻辑
+     - 流式输出时（`isStreaming=true`）不移除代码块，让用户看到完整内容
+     - 只有当 `strategy` 存在且流式完成后才移除 JSON 代码块
+     - 代码块使用 `CodeBlock` 组件渲染，支持语法高亮
+   - 新增：`src/components/ChatMessage.css` 添加代码块和行内代码样式
+   - 效果：流式输出时能正确显示代码块，完成后策略卡片正常展示
+
+**AI 助手代码展示和回测流程** [前端+后端]
+   - 问题1：点击查看代码弹窗显示不全
+   - 问题2：保存策略失败（NOT NULL constraint: base_strategy）
+   - 问题3：点击回测应直接进入回测界面，不需要策略参数配置
+   - 修复：
+     - 移除"查看代码"按钮，直接在 AI 回复中渲染代码块
+     - 移除数据库 `base_strategy` 和 `params_json` 字段，`code` 改为必填
+     - 回测 API 改为 POST 方式，支持 `strategy_code`/`user_strategy_id`/`preset_id` 三种策略加载方式
+     - 回测配置移除策略特定参数（快线/慢线周期），只保留通用配置
+     - 从 AI 助手点击"开始回测"直接跳转到回测页面并传递策略代码
+   - 涉及文件（后端）：
+     - `AgentTrader/src/monitor/database.py`
+     - `AgentTrader/src/api/routers/backtest.py`
+     - `AgentTrader/src/api/routers/user_strategy.py`
+   - 涉及文件（前端）：
+     - `src/components/StrategyPreviewCard.tsx`
+     - `src/pages/Agent.tsx`
+     - `src/pages/backtest/BacktestStream.tsx`
+     - `src/stores/backtestStore.ts`
+     - `src/api/strategy.ts`
+   - 注意：需要删除旧数据库重新初始化
 
 **合约乘数硬编码问题** [后端]
    - 问题：合约乘数写死为 10（螺纹钢），但用户可以选择不同期货品种
