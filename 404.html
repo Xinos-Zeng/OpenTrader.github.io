@@ -9,17 +9,14 @@
     var isLoggedIn = !!accessToken;
     var currentPath = window.location.pathname;
     
-    // 如果未登录且不在登录/注册页面，直接重定向到登录页
+    // 如果登录已失效，直接重定向到登录页
     if (!isLoggedIn && currentPath !== '/login' && currentPath !== '/register') {
       // 保存当前路径，以便登录后可以重定向回来
       sessionStorage.setItem('redirectAfterLogin', currentPath);
       window.location.replace('/login');
     } else {
       // 正常的SPA重定向逻辑
-      // GitHub Pages SPA 路由支持
-      // 将 404 路径转换为 query 参数，重定向到 index.html
-      var pathSegmentsToKeep = 0;
-
+      var pathSegmentsToKeep = 1;
       var l = window.location;
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
