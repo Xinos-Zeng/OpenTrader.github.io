@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>OpenTrader</title>
+  <script type="text/javascript">
+    // 检查用户登录状态
+    var accessToken = localStorage.getItem('access_token');
+    var isLoggedIn = !!accessToken;
+    var currentPath = window.location.pathname;
+    
+    // 如果未登录且不在登录/注册页面，直接重定向到登录页
+    if (!isLoggedIn && currentPath !== '/login' && currentPath !== '/register') {
+      // 保存当前路径，以便登录后可以重定向回来
+      sessionStorage.setItem('redirectAfterLogin', currentPath);
+      window.location.replace('/login');
+    } else {
+      // 正常的SPA重定向逻辑
+      // GitHub Pages SPA 路由支持
+      // 将 404 路径转换为 query 参数，重定向到 index.html
+      var pathSegmentsToKeep = 0;
+
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    }
+  </script>
+</head>
+<body>
+  <h2>正在重定向...</h2>
+</body>
+</html>

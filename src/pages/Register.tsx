@@ -47,7 +47,7 @@ export default function Register() {
       <div className="auth-container">
         <div className="auth-logo">
           <h1>Open<span>Trader</span></h1>
-          <p>AI 驱动的量化交易平台</p>
+          <p>你的Agent量化交易助手</p>
         </div>
 
         <div className="card auth-card">

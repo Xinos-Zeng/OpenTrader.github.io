@@ -4,11 +4,53 @@
 修复后不需要你重启服务，我会自己重启。
 
 ### 待修复/优化
-（无）
+2. 现在的AI对话界面移动端不友好，主要是左侧的历史对话栏会挡住对话界面导致没办法输入，并且历史对话栏的收起按钮在移动端也看不到。
 
 ---
 
 ### 已修复
+
+**GitHub Pages 404 问题** [前端+部署]
+   - 问题：刷新页面或直接访问子路由（如 `/dashboard`）时返回 404
+   - 原因：
+     1. `build/index.html` 是压缩版本，丢失了 SPA 路由脚本
+     2. `build/404.html` 可能未正确复制
+   - 修复：
+     - `.github/workflows/deploy.yml`：
+       - 构建后显式复制 `public/404.html` 到 `build/404.html`
+       - 使用 sed 在 `build/index.html` 的 `</head>` 前注入 SPA 路由脚本
+     - `public/404.html`：
+       - 添加登录检查逻辑（参考 currency.github.io 项目）
+       - 未登录用户访问受保护路由时，先保存目标路径到 sessionStorage，然后重定向到 `/login`
+   - 涉及文件：
+     - `.github/workflows/deploy.yml`
+     - `public/404.html`
+
+**登录后系统策略 loading 无限循环** [前端] 
+   - 问题：部署到 GitHub Pages 后登录成功，系统策略一直显示 loading 状态
+   - 原因分析：
+     1. `strategyStore.ts` 中 `fetchStrategies` 等方法，当 `response.data` 为空时没有重置 `isLoading`
+     2. `client.ts` 拦截器存在并发刷新 Token 竞态问题，多个 401 并发刷新导致失败
+     3. GitHub Pages 不支持 SPA 路由，拦截器重定向到 `/login` 会 404
+     4. GitHub Actions 构建时缺少 `REACT_APP_API_URL` 环境变量
+   - 修复：
+     - `src/stores/strategyStore.ts`：所有异步方法（`fetchStrategies`、`fetchParams`、`fetchBacktestResults`）确保无论成功失败都重置 `isLoading`
+     - `src/api/client.ts`：添加 Token 刷新锁 + 请求队列，防止并发刷新；改进重定向逻辑兼容 GitHub Pages
+     - `public/404.html`：新增 SPA 路由重定向支持
+     - `public/index.html`：添加路径恢复脚本
+     - `.github/workflows/deploy.yml`：构建时添加 `REACT_APP_API_URL` 环境变量
+
+**登录错误提示和用户体验优化** [前端]
+   - 问题：
+     1. 登录时用户名不存在，错误提示一闪而过
+     2. 登录后右上角显示"用户"而不是用户名
+     3. 退出后登录按钮显示"登录中"状态
+   - 修复：
+     - `src/pages/Login.tsx`：添加错误消息自动清除机制（3秒后），提交前清除旧错误
+     - `src/stores/authStore.ts`：
+       - `login` 方法登录成功后立即获取用户信息
+       - `fetchUser` 方法添加更详细的错误日志和空数据处理
+       - `logout` 方法同时重置 `isLoading` 和 `error` 状态
 
 **TqSim 回测数据显示修复** [后端]
    - 问题：回测结果中累计盈亏、总盈亏、最大回撤等数据都显示为 0

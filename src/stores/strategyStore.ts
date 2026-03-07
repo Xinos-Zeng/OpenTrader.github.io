@@ -41,11 +41,10 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await strategyApi.list();
-      if (response.data) {
-        set({ strategies: response.data, isLoading: false });
-      }
+      set({ strategies: response.data || [], isLoading: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : '获取策略列表失败';
+      console.error('获取策略列表失败:', err);
       set({ error: message, isLoading: false });
     }
   },
@@ -81,18 +80,30 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
       const response = await strategyApi.getParams(strategyName);
       if (response.data) {
         set({ currentParams: response.data, isLoading: false });
+      } else {
+        // 无数据时回退到默认参数
+        const strategy = get().currentStrategy;
+        if (strategy) {
+          set({
+            currentParams: {
+              strategy_name: strategy.name,
+              params: { ...strategy.default_params },
+            },
+            isLoading: false,
+          });
+        } else {
+          set({ isLoading: false });
+        }
       }
     } catch {
       const strategy = get().currentStrategy;
-      if (strategy) {
-        set({
-          currentParams: {
-            strategy_name: strategy.name,
-            params: { ...strategy.default_params },
-          },
-          isLoading: false,
-        });
-      }
+      set({
+        currentParams: strategy ? {
+          strategy_name: strategy.name,
+          params: { ...strategy.default_params },
+        } : null,
+        isLoading: false,
+      });
     }
   },
 
@@ -129,9 +140,7 @@ export const useStrategyStore = create<StrategyState>((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await tradeApi.getBacktestResults(strategyName, 20);
-      if (response.data) {
-        set({ backtestResults: response.data, isLoading: false });
-      }
+      set({ backtestResults: response.data || [], isLoading: false });
     } catch {
       set({ isLoading: false });
     }

@@ -6,6 +6,17 @@
   <meta name="description" content="OpenTrader 量化交易平台">
   <meta name="theme-color" content="#10B981">
   <title>OpenTrader</title>
+  <!-- GitHub Pages SPA 路由支持：恢复 404.html 重定向的路径 -->
+  <script type="text/javascript">
+    (function(l) {
+      if (l.search[1] === '/') {
+        var decoded = l.search.slice(1).split('&').map(function(s) {
+          return s.replace(/~and~/g, '&');
+        }).join('?');
+        window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+      }
+    }(window.location));
+  </script>
 </head>
 <body>
   <noscript>您需要启用JavaScript才能运行此应用。</noscript>

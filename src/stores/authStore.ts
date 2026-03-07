@@ -39,6 +39,17 @@ export const useAuthStore = create<AuthState>((set) => ({
         localStorage.setItem('access_token', response.data.access_token);
         localStorage.setItem('refresh_token', response.data.refresh_token);
         set({ isAuthenticated: true, isLoading: false });
+        
+        // 登录成功后立即获取用户信息
+        try {
+          const userResponse = await authApi.getMe();
+          if (userResponse.data) {
+            set({ user: userResponse.data });
+          }
+        } catch (e) {
+          console.error('获取用户信息失败:', e);
+        }
+        
         return true;
       }
       set({ error: response.message || '登录失败', isLoading: false });
@@ -83,7 +94,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    set({ user: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false, isLoading: false, error: null });
   },
 
   fetchUser: async () => {
@@ -94,8 +105,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       const response = await authApi.getMe();
       if (response.data) {
         set({ user: response.data, isAuthenticated: true, isLoading: false });
+      } else {
+        set({ isLoading: false });
       }
-    } catch {
+    } catch (err) {
+      console.error('获取用户信息失败:', err);
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

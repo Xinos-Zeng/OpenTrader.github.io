@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import './Auth.css';
@@ -12,8 +12,20 @@ export default function Login() {
     password: '',
   });
 
+  // 当表单内容改变时，清除错误（用户开始重新输入）
+  useEffect(() => {
+    if (error && (form.username || form.password)) {
+      // 给用户足够时间看到错误消息
+      const timer = setTimeout(() => {
+        clearError();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [form.username, form.password, error, clearError]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    clearError(); // 提交前先清除旧错误
     const success = await login(form);
     if (success) {
       navigate('/dashboard');
@@ -25,7 +37,7 @@ export default function Login() {
       <div className="auth-container">
         <div className="auth-logo">
           <h1>Open<span>Trader</span></h1>
-          <p>AI 驱动的量化交易平台</p>
+          <p>你的Agent量化交易助手</p>
         </div>
 
         <div className="card auth-card">

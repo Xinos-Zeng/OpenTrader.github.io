@@ -30,6 +30,19 @@ jobs:
         run: npm run build
         env:
           CI: false
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+
+      - name: Setup GitHub Pages SPA support
+        run: |
+          # 确保 404.html 存在于 build 目录
+          cp public/404.html build/404.html
+          
+          # 在 build/index.html 的 <head> 中注入 SPA 路由脚本
+          # 该脚本用于恢复 404.html 重定向时传递的路径参数
+          SPA_SCRIPT='<script type="text/javascript">(function(l){if(l.search[1]==="/"){var decoded=l.search.slice(1).split("&").map(function(s){return s.replace(/~and~/g,"&")}).join("?");window.history.replaceState(null,null,l.pathname.slice(0,-1)+decoded+l.hash)}}(window.location))</script>'
+          
+          # 在 </head> 前注入脚本
+          sed -i "s|</head>|${SPA_SCRIPT}</head>|" build/index.html
 
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
