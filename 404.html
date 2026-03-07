@@ -1,35 +1,37 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
   <title>OpenTrader</title>
-  <script>
-    // GitHub Pages SPA 404 重定向
-    // 当访问不存在的路径时（如刷新 /dashboard），GitHub Pages 会显示此 404 页面
-    // 我们将完整路径信息存储到 sessionStorage，然后重定向到首页
-    // 首页会读取并恢复原始路径
+  <script type="text/javascript">
+    // 检查用户登录状态
+    var accessToken = localStorage.getItem('access_token');
+    var isLoggedIn = !!accessToken;
+    var currentPath = window.location.pathname;
     
-    (function() {
-      var loc = window.location;
-      
-      // 获取完整路径（包括子路径）
-      var fullPath = loc.pathname + loc.search + loc.hash;
-      
-      // 如果已经在首页，不做处理
-      if (fullPath === '/' || fullPath === '/index.html') {
-        return;
-      }
-      
-      // 存储完整路径到 sessionStorage
-      sessionStorage.setItem('spa_redirect_path', fullPath);
-      
-      // 重定向到首页
-      loc.replace(loc.origin + '/');
-    })();
+    // 如果未登录且不在登录/注册页面，直接重定向到登录页
+    if (!isLoggedIn && currentPath !== '/login' && currentPath !== '/register') {
+      // 保存当前路径，以便登录后可以重定向回来
+      sessionStorage.setItem('redirectAfterLogin', currentPath);
+      window.location.replace('/login');
+    } else {
+      // 正常的SPA重定向逻辑
+      // GitHub Pages SPA 路由支持
+      // 将 404 路径转换为 query 参数，重定向到 index.html
+      var pathSegmentsToKeep = 0;
+
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    }
   </script>
 </head>
 <body>
-  <noscript>正在重定向...</noscript>
+  <h2>正在重定向...</h2>
 </body>
 </html>
