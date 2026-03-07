@@ -41,9 +41,25 @@ export default function Agent() {
   } = useChatStore();
 
   const [inputValue, setInputValue] = useState('');
-  const [showSidebar, setShowSidebar] = useState(true);
+  // 移动端默认收起侧边栏
+  const [showSidebar, setShowSidebar] = useState(() => window.innerWidth > 768);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
+  
+  // 监听窗口大小变化
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setShowSidebar(false);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 加载会话列表
   useEffect(() => {
@@ -79,6 +95,10 @@ export default function Agent() {
     
     sendMessage(msg);
     setInputValue('');
+    // 移动端发送消息后自动收起侧边栏
+    if (isMobile) {
+      setShowSidebar(false);
+    }
   };
 
   // 处理键盘事件
@@ -142,6 +162,14 @@ export default function Agent() {
       <NavBar />
       
       <div className="agent-container">
+        {/* 移动端遮罩层 */}
+        {isMobile && showSidebar && (
+          <div 
+            className="sidebar-overlay" 
+            onClick={() => setShowSidebar(false)}
+          />
+        )}
+        
         {/* 侧边栏 - 会话列表 */}
         <aside className={`agent-sidebar ${showSidebar ? '' : 'collapsed'}`}>
           <div className="sidebar-header">

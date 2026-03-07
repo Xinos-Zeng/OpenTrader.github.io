@@ -369,23 +369,72 @@
   margin-top: 16px;
 }
 
+/* 遮罩层 */
+.sidebar-overlay {
+  display: none;
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
+  /* 遮罩层 - 移动端侧边栏展开时显示 */
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    top: 60px; /* NavBar 高度 */
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 99;
+    animation: fadeIn 0.2s ease;
+  }
+  
   .agent-sidebar {
-    position: absolute;
+    position: fixed;
     left: 0;
-    top: 0;
+    top: 60px; /* NavBar 高度 */
     bottom: 0;
     z-index: 100;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+    transform: translateX(0);
   }
   
   .agent-sidebar.collapsed {
-    left: -280px;
+    transform: translateX(-100%);
+    width: 280px; /* 保持宽度，通过transform隐藏 */
+    margin-left: 0;
+  }
+  
+  /* 移动端收起按钮样式优化 */
+  .toggle-sidebar-btn {
+    position: fixed;
+    left: 8px;
+    top: 70px; /* 稍微往下移动，避免与NavBar重叠 */
+    transform: none;
+    z-index: 101; /* 高于侧边栏 */
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: white;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .toggle-sidebar-btn:hover {
+    background: var(--color-primary-dark);
+  }
+  
+  /* 侧边栏展开时，按钮移到侧边栏内部 */
+  .agent-sidebar:not(.collapsed) ~ .agent-main .toggle-sidebar-btn {
+    left: 252px; /* 280px - 按钮宽度 - padding */
+    background: white;
+    color: var(--color-gray-600);
+    border: 1px solid var(--color-gray-200);
   }
   
   .chat-messages {
     padding: 16px;
+    padding-left: 52px; /* 为按钮留出空间 */
   }
   
   .chat-input-area {
@@ -398,5 +447,34 @@
   
   .code-modal-content {
     min-width: auto;
+  }
+}
+
+/* 更小屏幕的额外优化 */
+@media (max-width: 480px) {
+  .agent-sidebar {
+    width: 100%;
+  }
+  
+  .agent-sidebar.collapsed {
+    width: 100%;
+  }
+  
+  .chat-messages {
+    padding: 12px;
+    padding-left: 48px;
+  }
+  
+  .chat-input-area {
+    padding: 8px 12px 12px;
+  }
+  
+  .input-wrapper {
+    padding: 6px 10px;
+  }
+  
+  .send-btn {
+    width: 36px;
+    height: 36px;
   }
 }
