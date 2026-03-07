@@ -1,0 +1,358 @@
+/**
+ * 自定义表单控件样式
+ */
+
+/* ==================== Checkbox 复选框 ==================== */
+
+.custom-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  height: 24px; /* 固定高度防止勾选时抖动 */
+}
+
+.custom-checkbox:focus-visible .checkbox-box {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+}
+
+.custom-checkbox.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.checkbox-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.custom-checkbox:hover:not(.disabled) .checkbox-box {
+  border-color: #10B981;
+}
+
+.custom-checkbox.checked .checkbox-box {
+  background: #10B981;
+  border-color: #10B981;
+}
+
+.checkbox-icon {
+  color: #ffffff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.checkbox-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  line-height: 24px;
+}
+
+.custom-checkbox.disabled .checkbox-text {
+  color: #9ca3af;
+}
+
+/* ==================== Select 下拉框 ==================== */
+
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.select-trigger:hover {
+  border-color: #d1d5db;
+}
+
+.custom-select.open .select-trigger {
+  border-color: #10B981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.custom-select.disabled .select-trigger {
+  background: #f9fafb;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.select-value {
+  font-size: 14px;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-value.placeholder {
+  color: #9ca3af;
+}
+
+.select-arrow {
+  display: flex;
+  align-items: center;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.custom-select.open .select-arrow {
+  transform: rotate(180deg);
+}
+
+/* 下拉菜单 */
+.select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 240px;
+  overflow-y: auto;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.select-option:hover {
+  background: #f3f4f6;
+}
+
+.select-option.selected {
+  background: #ecfdf5;
+  color: #059669;
+  font-weight: 500;
+}
+
+.check-icon {
+  color: #10B981;
+}
+
+/* ==================== DatePicker 日期选择器 ==================== */
+
+.custom-datepicker {
+  position: relative;
+  width: 100%;
+}
+
+.datepicker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.datepicker-trigger:hover {
+  border-color: #d1d5db;
+}
+
+.custom-datepicker.open .datepicker-trigger {
+  border-color: #10B981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.custom-datepicker.disabled .datepicker-trigger {
+  background: #f9fafb;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.datepicker-value {
+  font-size: 14px;
+  color: #111827;
+}
+
+.datepicker-value.placeholder {
+  color: #9ca3af;
+}
+
+.datepicker-icon {
+  display: flex;
+  align-items: center;
+  color: #6b7280;
+}
+
+/* 日历下拉 */
+.datepicker-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  padding: 12px;
+  min-width: 280px;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+/* 头部导航 */
+.datepicker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.datepicker-header .nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s ease;
+}
+
+.datepicker-header .nav-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.current-month {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* 星期头 */
+.datepicker-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.weekday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+/* 日期网格 */
+.datepicker-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  font-size: 13px;
+  color: #374151;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.day:hover:not(.empty):not(.disabled):not(.selected) {
+  background: #f3f4f6;
+}
+
+.day.empty {
+  cursor: default;
+}
+
+.day.selected {
+  background: #10B981;
+  color: white;
+  font-weight: 500;
+}
+
+.day.disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* 底部 */
+.datepicker-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: center;
+}
+
+.today-btn {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #10B981;
+  background: transparent;
+  border: 1px solid #10B981;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.today-btn:hover {
+  background: #10B981;
+  color: white;
+}

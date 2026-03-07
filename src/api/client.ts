@@ -8,6 +8,8 @@ export const api = axios.create({
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    // 跳过 ngrok 免费版的浏览器警告页面
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 

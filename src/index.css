@@ -5,9 +5,14 @@
   box-sizing: border-box;
 }
 
+/* 强制整个文档使用亮色主题 */
+html {
+  color-scheme: light only;
+}
+
 :root {
   /* 强制使用亮色主题，防止表单元素出现黑色背景 */
-  color-scheme: light;
+  color-scheme: light only;
   
   --color-primary: #10B981;
   --color-primary-dark: #059669;
@@ -118,11 +123,24 @@ body {
   font-size: 14px;
   transition: all 0.2s;
   outline: none;
+  background-color: #ffffff;
+  color: var(--color-gray-900);
 }
 
 .input:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* 全局表单元素样式 - 防止黑框闪现 */
+input, select, textarea {
+  color-scheme: light only;
+  background-color: #ffffff;
+}
+
+select option {
+  background-color: #ffffff;
+  color: #111827;
 }
 
 /* 表单 */

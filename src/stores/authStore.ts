@@ -58,8 +58,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       // 提取 axios 错误响应中的消息
       let message = '登录失败';
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosErr = err as { response?: { data?: { message?: string; detail?: string } } };
-        message = axiosErr.response?.data?.message || axiosErr.response?.data?.detail || '用户名或密码错误';
+        const axiosErr = err as { response?: { data?: { message?: string; detail?: string | { message?: string } } } };
+        const detail = axiosErr.response?.data?.detail;
+        // detail 可能是字符串或对象 { code, message }
+        const detailMsg = typeof detail === 'object' ? detail?.message : detail;
+        message = axiosErr.response?.data?.message || detailMsg || '用户名或密码错误';
       } else if (err instanceof Error) {
         message = err.message;
       }
@@ -81,8 +84,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err: unknown) {
       let message = '注册失败';
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosErr = err as { response?: { data?: { message?: string; detail?: string } } };
-        message = axiosErr.response?.data?.message || axiosErr.response?.data?.detail || '注册失败，请稍后重试';
+        const axiosErr = err as { response?: { data?: { message?: string; detail?: string | { message?: string } } } };
+        const detail = axiosErr.response?.data?.detail;
+        // detail 可能是字符串或对象 { code, message }
+        const detailMsg = typeof detail === 'object' ? detail?.message : detail;
+        message = axiosErr.response?.data?.message || detailMsg || '注册失败，请稍后重试';
       } else if (err instanceof Error) {
         message = err.message;
       }

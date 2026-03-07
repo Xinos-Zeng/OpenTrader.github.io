@@ -10,14 +10,15 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   showCloseButton?: boolean;
+  size?: 'default' | 'large' | 'small';
 }
 
-export function Modal({ isOpen, onClose, title, children, showCloseButton = true }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, showCloseButton = true, size = 'default' }: ModalProps) {
   if (!isOpen) return null;
   
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal-container modal-${size}`} onClick={(e) => e.stopPropagation()}>
         {(title || showCloseButton) && (
           <div className="modal-header">
             {title && <h3 className="modal-title">{title}</h3>}

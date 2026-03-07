@@ -15,6 +15,7 @@ export default function NavBar() {
   const navItems = [
     { path: '/dashboard', label: '策略' },
     { path: '/backtest/stream', label: '回测' },
+    { path: '/agent', label: '🤖 AI助手' },
     { path: '/favorites', label: '收藏' },
   ];
 

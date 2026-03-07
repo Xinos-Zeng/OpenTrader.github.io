@@ -1,0 +1,114 @@
+/* 附加策略卡片样式 */
+.attached-strategy-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #7dd3fc;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.attached-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.attached-icon {
+  font-size: 16px;
+}
+
+.attached-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #0284c7;
+  flex: 1;
+}
+
+.attached-remove {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.attached-remove:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.attached-content {
+  margin-bottom: 10px;
+}
+
+.attached-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.attached-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.attached-lines {
+  color: #0369a1;
+}
+
+.attached-metrics {
+  color: #059669;
+}
+
+.attached-view-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #0284c7;
+  background: white;
+  border: 1px solid #7dd3fc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.attached-view-code:hover {
+  background: #0284c7;
+  color: white;
+}
+
+/* 代码预览弹窗 */
+.attached-code-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.attached-code-desc {
+  font-size: 14px;
+  color: #475569;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.attached-code-block {
+  max-height: 400px;
+  overflow: auto;
+  border-radius: 8px;
+}

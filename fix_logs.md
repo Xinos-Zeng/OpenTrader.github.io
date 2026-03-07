@@ -51,6 +51,184 @@
        - `login` 方法登录成功后立即获取用户信息
        - `fetchUser` 方法添加更详细的错误日志和空数据处理
        - `logout` 方法同时重置 `isLoading` 和 `error` 状态
+**GitHub Pages 刷新 404 问题 v3** [前端]
+   - 问题：刷新 `/dashboard` 等路由显示 404
+   - 原因：之前的 URL 参数方案 (`?p=path`) 可能被某些情况下清除
+   - 修复：改用 `sessionStorage` 方案
+     - `public/404.html`：将完整路径存入 `sessionStorage`，然后重定向到首页
+     - `public/index.html`：读取 `sessionStorage` 恢复路径，然后立即清除
+   - 优势：`sessionStorage` 在同一标签页内持久，比 URL 参数更可靠
+   - 注意：需要重新 `npm run build` 并部署
+
+**代码复制成功提示** [前端]
+   - 问题：点击复制代码后没有反馈
+   - 修复：`src/components/CodeBlock.tsx`
+     - 添加 `copied` 状态
+     - 复制成功后按钮变绿显示"✓ 已复制"，2秒后恢复
+   - 样式：`src/components/CodeBlock.css` 添加 `.copied` 状态的绿色样式
+
+**AttachedStrategyCard toFixed 报错** [前端]
+   - 问题：优化策略时附加卡片报错 `Cannot read properties of null`
+   - 原因：同 StrategyDetailModal，指标值可能是 `null`
+   - 修复：`src/components/AttachedStrategyCard.tsx`
+     - 将 `!== undefined` 改为 `!= null`
+
+**策略详情弹窗 toFixed 报错** [前端]
+   - 问题：点击策略详情弹窗报错 `Cannot read properties of null (reading 'toFixed')`
+   - 原因：后端返回的指标值可能是 `null`，使用 `!== undefined` 检查无法过滤 `null`
+   - 修复：`src/components/StrategyDetailModal.tsx`
+     - 将 `!== undefined` 改为 `!= null`（同时过滤 `undefined` 和 `null`）
+   - 效果：策略详情弹窗正常显示，指标为空时不报错
+
+**优化策略未附带代码到 AI 助手** [前端]
+   - 问题：点击"优化策略"跳转到 AI 助手，但没有附加策略卡片
+   - 原因：
+     1. 策略列表 API 没有返回 `code` 字段，需要单独获取详情
+     2. Agent.tsx 中未处理 `location.state` 传入的策略
+   - 修复：
+     - `src/pages/Dashboard.tsx`: `handleOptimizeStrategy` 先获取策略详情再跳转
+     - `src/pages/Agent.tsx`: 添加 useEffect 处理 `location.state.optimizeStrategy`
+   - 效果：点击优化后，AI 助手页面正确显示附加策略卡片
+
+---
+
+### 历史修复
+
+**Agent 生成策略回测报错 "预置策略不存在: user_1"** [前端]
+   - 问题：从 Agent 生成策略后点击回测，报错显示预置策略不存在
+   - 原因：设置 `strategyCode` 时没有清除 `presetId` 和 `userStrategyId`，导致后端尝试错误的策略加载方式
+   - 修复：`src/pages/backtest/BacktestStream.tsx`
+     - 设置策略配置时，同时清除其他策略选项
+     - 修复用户策略 ID 解析逻辑（`user_1` → `userStrategyId: 1`）
+     - 三种策略互斥：`strategyCode` / `userStrategyId` / `presetId`
+   - 效果：Agent 生成的策略可以正常开始回测
+
+**Agent 回复 JSON 策略块应渲染为 Python 代码** [前端]
+   - 问题：Agent 回复的 ```json 策略块直接渲染为 JSON 代码框，而不是 Python 代码
+   - 原因：ChatMessage 组件没有解析 JSON 内容并提取 `code` 字段
+   - 修复：`src/components/ChatMessage.tsx`
+     - 新增 `tryParseStrategyJson()` 函数解析策略 JSON
+     - 检测到 JSON 策略块时，提取 `code` 字段渲染为 Python 代码框
+     - 流式输出时显示 Python 代码，完成后显示策略卡片
+   - 效果：用户看到的是格式化的 Python 代码，而不是 JSON 文本
+
+**Agent 策略卡片不显示 / 一直等待后端** [前端]
+   - 问题：回答生成完后策略卡片不显示，界面一直显示等待状态
+   - 原因：SSE 解析逻辑在流结束时没有正确处理缓冲区中剩余的事件
+   - 修复：`src/api/agent.ts`
+     - 重构 SSE 事件解析逻辑，提取 `processEvent()` 函数
+     - 在流结束后处理缓冲区中剩余的内容
+     - 新事件开始时自动处理上一个事件
+     - 添加 `receivedDone` 标记检测异常断开
+   - 效果：流式完成后正确显示策略卡片和操作按钮
+
+**登录错误提示消失太快** [前端]
+   - 问题：登录失败时错误提示一闪而过
+   - 原因：登录返回 401 时，axios 响应拦截器会触发重定向到 /login，导致页面刷新，error 状态丢失
+   - 修复：`src/api/client.ts` 响应拦截器添加判断，如果是登录/注册请求则不触发 token 刷新和重定向
+   - 效果：登录失败时错误信息持续显示，直到用户关闭或重新输入
+
+**Agent 回复代码渲染 bug** [前端]
+   - 问题：流式输出时显示 ```json 原始文本，然后内容消失，光标闪烁但看不到输出
+   - 原因：ChatMessage 组件的 renderContent 函数在流式输出时过早移除代码块，导致内容消失
+   - 修复：
+     - 重写 `src/components/ChatMessage.tsx` 使用智能解析逻辑
+     - 流式输出时（`isStreaming=true`）不移除代码块，让用户看到完整内容
+     - 只有当 `strategy` 存在且流式完成后才移除 JSON 代码块
+     - 代码块使用 `CodeBlock` 组件渲染，支持语法高亮
+   - 新增：`src/components/ChatMessage.css` 添加代码块和行内代码样式
+   - 效果：流式输出时能正确显示代码块，完成后策略卡片正常展示
+
+**AI 助手代码展示和回测流程** [前端+后端]
+   - 问题1：点击查看代码弹窗显示不全
+   - 问题2：保存策略失败（NOT NULL constraint: base_strategy）
+   - 问题3：点击回测应直接进入回测界面，不需要策略参数配置
+   - 修复：
+     - 移除"查看代码"按钮，直接在 AI 回复中渲染代码块
+     - 移除数据库 `base_strategy` 和 `params_json` 字段，`code` 改为必填
+     - 回测 API 改为 POST 方式，支持 `strategy_code`/`user_strategy_id`/`preset_id` 三种策略加载方式
+     - 回测配置移除策略特定参数（快线/慢线周期），只保留通用配置
+     - 从 AI 助手点击"开始回测"直接跳转到回测页面并传递策略代码
+   - 涉及文件（后端）：
+     - `AgentTrader/src/monitor/database.py`
+     - `AgentTrader/src/api/routers/backtest.py`
+     - `AgentTrader/src/api/routers/user_strategy.py`
+   - 涉及文件（前端）：
+     - `src/components/StrategyPreviewCard.tsx`
+     - `src/pages/Agent.tsx`
+     - `src/pages/backtest/BacktestStream.tsx`
+     - `src/stores/backtestStore.ts`
+     - `src/api/strategy.ts`
+   - 注意：需要删除旧数据库重新初始化
+
+**合约乘数硬编码问题** [后端]
+   - 问题：合约乘数写死为 10（螺纹钢），但用户可以选择不同期货品种
+   - 原因：不同期货品种合约乘数不同（如黄金 1000、豆粕 10、棉花 5 等）
+   - 修复：`AgentTrader/src/strategy/backtest.py`
+     - 使用 `api.get_quote(symbol)` 获取合约信息
+     - 从 `quote.volume_multiple` 获取真实合约乘数
+     - `run_stream` 和 `run_stream_with_agent` 均已更新
+   - 效果：自动适配不同期货品种的合约乘数
+
+**自定义表单控件组件** [前端]
+   - 问题：原生 select 和 date input 在某些浏览器下会闪现黑框，且样式不现代化
+   - 原因：原生控件受系统主题影响，CSS 无法完全覆盖
+   - 修复：创建完全自定义的组件替代原生控件
+     - 新增 `src/components/FormControls.tsx`：自定义 `Select` 和 `DatePicker` 组件
+     - 新增 `src/components/FormControls.css`：组件样式
+     - 修改 `src/pages/backtest/BacktestStream.tsx`：使用新组件
+   - 特点：
+     - 纯 div 实现，不使用原生 select/input[type=date]
+     - 下拉框带动画、选中状态、搜索图标
+     - 日期选择器带完整日历、年月导航、今天快捷按钮
+     - 统一的现代化设计风格
+
+**回测数据统计与 TqSdk 日志不匹配** [后端]
+   - 问题：前端显示的余额、累计盈亏、胜率、最大回撤等数据与后端 TqSdk 日志不一致
+   - 原因：
+     1. `total_profit` 使用了 `final_close_profit`（仅平仓盈亏），而非 `final_balance - init_balance`（总盈亏）
+     2. 胜率计算把开仓交易（`trade_pnl=0`）也计入了
+     3. `market_value` 计算没有使用合约乘数
+   - 修复：`AgentTrader/src/strategy/backtest.py`
+     - `total_profit` 改为 `final_balance - init_balance`（总盈亏包含浮动盈亏）
+     - 胜率只计算有实际盈亏的平仓交易（`trade_pnl != 0`）
+     - `market_value` 正确计算为 `abs(净持仓) * 价格 * 合约乘数`
+   - 效果：前端显示数据与 TqSdk 日志一致
+
+**GitHub Pages SPA 刷新 404 问题 v2** [前端]
+   - 问题：之前的 sessionStorage 方案在某些情况下不生效
+   - 原因：sessionStorage 在跨页面时可能丢失，特别是在 GitHub Pages 上
+   - 修复：改用 URL 参数方案
+     - `public/404.html`：将原始路径编码到 URL 参数 `?p=` 中，然后重定向到首页
+     - `public/index.html`：读取 URL 参数并使用 History API 恢复原始路径
+   - 原理：URL 参数在重定向过程中不会丢失，比 sessionStorage 更可靠
+
+**下拉框和日期选择器黑框闪现** [前端]
+   - 问题：下拉框和日期选择器在点击时会闪现黑框，样式与现代化设计不匹配
+   - 原因：浏览器暗色模式下原生表单控件会先渲染深色样式，再应用自定义样式
+   - 修复：
+     - `src/index.css`：在 `html` 和 `:root` 添加 `color-scheme: light only` 强制亮色
+     - `src/pages/backtest/BacktestStream.css`：
+       - 为 select/input 添加 `color-scheme: light only` 和 `forced-color-adjust: none`
+       - 添加 `!important` 强制背景色为白色
+       - 优化日期选择器图标交互效果
+   - 效果：表单控件不再闪黑框，样式统一现代化
+
+**GitHub Pages SPA 刷新 404 问题** [前端]
+   - 问题：在 GitHub Pages 上刷新非首页路由（如 `/dashboard`）会显示 404
+   - 原因：GitHub Pages 是静态托管，不支持 SPA 路由重写，刷新时会尝试访问不存在的 HTML 文件
+   - 修复：
+     - 新增 `public/404.html`：捕获 404 请求，将路径存入 `sessionStorage` 后重定向到首页
+     - 修改 `public/index.html`：在 React 加载前从 `sessionStorage` 读取路径，使用 History API 恢复原始 URL
+   - 原理：利用 GitHub Pages 会自动使用 404.html 处理不存在的路径这一特性
+
+**ngrok 请求返回 HTML 警告页面** [前端]
+   - 问题：请求后端返回 200，但响应内容是 ngrok 的浏览器警告页面而非 JSON 数据
+   - 原因：ngrok 免费版会在首次访问时显示安全警告页面（ERR_NGROK_6024）
+   - 修复：
+     - `src/api/client.ts`：在 axios 实例的默认 headers 中添加 `'ngrok-skip-browser-warning': 'true'`，同时为 token 刷新请求也添加此 header
+     - `src/stores/backtestStore.ts`：回测流式请求使用原生 fetch API 而非 axios，需单独添加此 header
+   - 效果：所有 API 请求（包括流式 SSE）会自动跳过 ngrok 警告页面
 
 **TqSim 回测数据显示修复** [后端]
    - 问题：回测结果中累计盈亏、总盈亏、最大回撤等数据都显示为 0

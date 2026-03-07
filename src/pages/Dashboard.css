@@ -24,6 +24,23 @@
   margin: 4px 0 0 0;
 }
 
+/* Dashboard 两栏布局 */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.strategy-area {
+  min-width: 0;
+}
+
+.leaderboard-area {
+  position: sticky;
+  top: 80px;
+}
+
 .loading {
   display: flex;
   align-items: center;
@@ -67,6 +84,10 @@
 .user-strategy-card {
   position: relative;
   padding: 16px;
+  /* 使用 2px 透明边框作为基础，避免选中时边框变化导致高度跳动 */
+  border: 2px solid transparent !important;
+  /* 使用 box-shadow 模拟原本的 1px 边框效果 */
+  box-shadow: inset 0 0 0 1px var(--color-gray-100), 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .user-strategy-card .card-header {
@@ -129,9 +150,68 @@
   color: var(--color-gray-500);
 }
 
+.user-strategy-card .card-return-rate {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.user-strategy-card .card-return-rate.profit {
+  color: var(--color-success);
+}
+
+.user-strategy-card .card-return-rate.loss {
+  color: var(--color-danger);
+}
+
+/* 卡片操作按钮 */
+.user-strategy-card .card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-gray-100);
+}
+
+.user-strategy-card .action-btn {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.user-strategy-card .action-btn.detail-btn {
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.user-strategy-card .action-btn.detail-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.user-strategy-card .action-btn.optimize-btn {
+  color: #7c3aed;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+}
+
+.user-strategy-card .action-btn.optimize-btn:hover {
+  background: #7c3aed;
+  color: white;
+}
+
 .user-strategy-card.selected {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* 用户策略选中标记 */
@@ -176,6 +256,20 @@
   justify-content: flex-end;
 }
 
+/* 平板响应式 */
+@media (max-width: 1024px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .leaderboard-area {
+    position: static;
+    order: -1;
+    margin-bottom: 8px;
+  }
+}
+
+/* 移动端响应式 */
 @media (max-width: 640px) {
   .strategy-grid {
     grid-template-columns: 1fr;
@@ -190,9 +284,14 @@
     border-top: 1px solid var(--color-gray-100);
     padding: 16px;
     margin: 0;
+    z-index: 100;
   }
   
   .action-bar .btn {
     width: 100%;
+  }
+
+  .strategy-area {
+    padding-bottom: 80px;
   }
 }
