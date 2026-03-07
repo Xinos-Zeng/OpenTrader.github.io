@@ -4,30 +4,28 @@
   <meta charset="utf-8">
   <title>OpenTrader</title>
   <script type="text/javascript">
-    // 检查用户登录状态
-    var accessToken = localStorage.getItem('access_token');
-    var isLoggedIn = !!accessToken;
-    var currentPath = window.location.pathname;
+    // 使用 HashRouter 后，404 页面只需简单重定向到首页
+    // GitHub Pages 会处理带 # 的 URL，不会触发 404
+    // 这个文件只在用户直接访问不存在的路径时触发（如旧书签）
     
-    // 如果登录已失效，直接重定向到登录页
-    if (!isLoggedIn && currentPath !== '/login' && currentPath !== '/register') {
-      // 保存当前路径，以便登录后可以重定向回来
-      sessionStorage.setItem('redirectAfterLogin', currentPath);
-      window.location.replace('/login');
-    } else {
-      // 正常的SPA重定向逻辑
-      // pathSegmentsToKeep: 0 = 用户/组织主页 (username.github.io)
-      //                     1 = 项目页面 (username.github.io/repo-name)
-      var pathSegmentsToKeep = 0;
-      var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-      );
-    }
+    // 获取当前路径，转换为 hash 路由格式
+    var path = window.location.pathname;
+    var search = window.location.search;
+    var hash = window.location.hash;
+    
+    // 提取项目名后的路径部分
+    // 例如: /OpenTrader.github.io/dashboard -> /dashboard
+    var pathParts = path.split('/');
+    var repoIndex = pathParts.findIndex(function(p) { 
+      return p.toLowerCase().includes('opentrader'); 
+    });
+    var routePath = repoIndex >= 0 ? '/' + pathParts.slice(repoIndex + 1).join('/') : path;
+    
+    // 重定向到首页，使用 hash 路由
+    var basePath = repoIndex >= 0 ? '/' + pathParts.slice(0, repoIndex + 1).join('/') : '';
+    var newUrl = window.location.origin + basePath + '/#' + routePath + search + hash;
+    
+    window.location.replace(newUrl);
   </script>
 </head>
 <body>
