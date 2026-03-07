@@ -16,7 +16,9 @@
       window.location.replace('/login');
     } else {
       // 正常的SPA重定向逻辑
-      var pathSegmentsToKeep = 1;
+      // pathSegmentsToKeep: 0 = 用户/组织主页 (username.github.io)
+      //                     1 = 项目页面 (username.github.io/repo-name)
+      var pathSegmentsToKeep = 0;
       var l = window.location;
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
