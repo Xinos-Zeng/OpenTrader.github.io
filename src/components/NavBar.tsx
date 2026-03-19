@@ -17,6 +17,7 @@ export default function NavBar() {
     { path: '/backtest/stream', label: '回测' },
     { path: '/agent', label: '🤖 AI助手' },
     { path: '/favorites', label: '收藏' },
+    { path: '/contact', label: '联系我' },
   ];
 
   const isActive = (path: string) => location.pathname.startsWith(path);

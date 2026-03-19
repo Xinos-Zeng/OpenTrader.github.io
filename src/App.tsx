@@ -13,6 +13,7 @@ import BacktestStream from './pages/backtest/BacktestStream';
 import Favorites from './pages/Favorites';
 import FavoriteDetail from './pages/FavoriteDetail';
 import Agent from './pages/Agent';
+import Contact from './pages/Contact';
 
 // 路由守卫组件
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -116,6 +117,15 @@ export default function App() {
           element={
             <PrivateRoute>
               <FavoriteDetail />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/contact"
+          element={
+            <PrivateRoute>
+              <Contact />
             </PrivateRoute>
           }
         />
