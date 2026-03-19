@@ -14,6 +14,7 @@ import { useBacktestStore, type StreamMessage } from '../../stores/backtestStore
 import { useChatStore, type AttachedStrategy } from '../../stores/chatStore';
 import { favoritesApi } from '../../api/favorites';
 import { strategyApi } from '../../api/strategy';
+import ToolCallCard from '../../components/ToolCallCard';
 import './BacktestStream.css';
 
 // Agent 策略类型
@@ -21,6 +22,22 @@ interface AgentStrategy {
   name: string;
   code: string;
   description: string;
+}
+
+/**
+ * 格式化 Agent 文本（处理 Markdown 样式）
+ */
+function formatAgentText(text: string): string {
+  let formatted = text;
+  // 加粗
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // 斜体
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // 行内代码
+  formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+  // 换行
+  formatted = formatted.replace(/\n/g, '<br />');
+  return formatted;
 }
 
 export default function BacktestStream() {
@@ -61,6 +78,9 @@ export default function BacktestStream() {
   
   // 帮助说明弹窗
   const [showHelpModal, setShowHelpModal] = useState(false);
+  
+  // 检测周期输入需要用字符串状态避免 "01" "012" 问题
+  const [intervalInput, setIntervalInput] = useState(String(config.agentInterval));
   
   // 初始化策略配置
   useEffect(() => {
@@ -186,7 +206,7 @@ export default function BacktestStream() {
         return_rate: return_rate,
         total_profit: stats?.total_profit,
         win_rate: stats ? parseFloat(stats.win_rate) : undefined,
-        max_drawdown: stats?.max_drawdown,
+        max_drawdown: stats?.max_drawdown ?? undefined,
         backtest_symbol: config.symbol,
         backtest_start: config.startDate,
         backtest_end: config.endDate,
@@ -225,7 +245,7 @@ export default function BacktestStream() {
       code: strategyCode,
       return_rate: return_rate,
       win_rate: stats ? parseFloat(stats.win_rate) : undefined,
-      max_drawdown: stats?.max_drawdown,
+      max_drawdown: stats?.max_drawdown ?? undefined,
     };
     
     // 跳转到 AI 助手，携带策略信息
@@ -329,12 +349,25 @@ export default function BacktestStream() {
             <div className={`agent-interval-inline ${!config.agentEnabled ? 'disabled' : ''}`}>
               <span className="interval-label">检测周期</span>
               <input
-                type="number"
-                value={config.agentInterval}
-                onChange={(e) => setConfig({ agentInterval: Number(e.target.value) })}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={intervalInput}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, '');
+                  setIntervalInput(raw);
+                  const num = parseInt(raw, 10);
+                  if (!isNaN(num) && num >= 0) {
+                    setConfig({ agentInterval: num });
+                  }
+                }}
+                onBlur={() => {
+                  const num = parseInt(intervalInput, 10);
+                  const clamped = isNaN(num) || num < 5 ? 5 : num > 365 ? 365 : num;
+                  setConfig({ agentInterval: clamped });
+                  setIntervalInput(String(clamped));
+                }}
                 disabled={isRunning || !config.agentEnabled}
-                min={5}
-                max={365}
               />
               <span className="interval-unit">天</span>
             </div>
@@ -393,7 +426,14 @@ export default function BacktestStream() {
             )}
             
             {messages.map((msg, idx) => 
-              msg.type === 'trade' ? (
+              msg.type === 'agent_tool' ? (
+                <ToolCallCard
+                  key={`tool-${msg.data.id}-${msg.data.tool_name}`}
+                  toolName={msg.data.tool_name}
+                  status={msg.data.status}
+                  result={msg.data.result}
+                />
+              ) : msg.type === 'trade' ? (
                 <div
                   key={`trade-${msg.data.id}`}
                   className={`trade-message ${msg.data.signal.toLowerCase()}`}
@@ -442,10 +482,19 @@ export default function BacktestStream() {
                   <div className="agent-header">
                     <span className="agent-icon">🤖</span>
                     <span className="agent-title">Agent 量化助手</span>
+                    {msg.data.action === 'analyzing' && (
+                      <span className="agent-tool-loading">
+                        <span className="tool-spinner"></span>
+                        调用分析工具中...
+                      </span>
+                    )}
                     <span className="agent-time">{msg.data.time}</span>
                   </div>
                   <div className="agent-content">
-                    <p className="agent-text">{msg.data.message}</p>
+                    <p 
+                      className="agent-text"
+                      dangerouslySetInnerHTML={{ __html: formatAgentText(msg.data.message) }}
+                    />
                     {msg.data.action === 'adjusted' && msg.data.params_before && msg.data.params_after && (
                       <div className="agent-params-change">
                         <div className="params-before">
@@ -464,7 +513,10 @@ export default function BacktestStream() {
                       </div>
                     )}
                     {msg.data.reason && (
-                      <p className="agent-reason">💡 {msg.data.reason}</p>
+                      <p 
+                        className="agent-reason"
+                        dangerouslySetInnerHTML={{ __html: '💡 ' + formatAgentText(msg.data.reason) }}
+                      />
                     )}
                   </div>
                 </div>
@@ -503,9 +555,39 @@ export default function BacktestStream() {
                 <div className="stat-label">总盈亏</div>
               </div>
               <div className="stat-card">
-                <div className="stat-value">{stats.max_drawdown.toFixed(2)}%</div>
+                <div className="stat-value">
+                  {stats.max_drawdown != null ? `${stats.max_drawdown.toFixed(2)}%` : 'NaN'}
+                </div>
                 <div className="stat-label">最大回撤</div>
               </div>
+              {stats.return_rate != null && (
+                <div className={`stat-card ${stats.return_rate >= 0 ? 'profit' : 'loss'}`}>
+                  <div className="stat-value">
+                    {stats.return_rate >= 0 ? '+' : ''}{stats.return_rate.toFixed(2)}%
+                  </div>
+                  <div className="stat-label">收益率</div>
+                </div>
+              )}
+              {stats.annual_return != null && (
+                <div className={`stat-card ${stats.annual_return >= 0 ? 'profit' : 'loss'}`}>
+                  <div className="stat-value">
+                    {stats.annual_return >= 0 ? '+' : ''}{stats.annual_return.toFixed(2)}%
+                  </div>
+                  <div className="stat-label">年化收益</div>
+                </div>
+              )}
+              {stats.sharpe_ratio != null && (
+                <div className="stat-card">
+                  <div className="stat-value">{stats.sharpe_ratio.toFixed(2)}</div>
+                  <div className="stat-label">夏普率</div>
+                </div>
+              )}
+              {stats.profit_loss_ratio != null && (
+                <div className="stat-card">
+                  <div className="stat-value">{stats.profit_loss_ratio.toFixed(2)}</div>
+                  <div className="stat-label">盈亏比</div>
+                </div>
+              )}
             </div>
             
             <div className="stats-actions">
@@ -688,6 +770,13 @@ export default function BacktestStream() {
                         累计: {(msg.data.realized_pnl ?? 0) >= 0 ? '+' : ''}{msg.data.realized_pnl?.toLocaleString()}
                       </span>
                     </div>
+                  </div>
+                ) : msg.type === 'agent_tool' ? (
+                  <div key={`detail-tool-${msg.data.id}`} className={`detail-agent-tool ${msg.data.status}`}>
+                    <span className="detail-time">{msg.data.time}</span>
+                    <span>{msg.data.status === 'done' ? '✓' : '⏳'}</span>
+                    <code>{msg.data.tool_name}</code>
+                    {msg.data.result && <span className="detail-tool-result">{msg.data.result}</span>}
                   </div>
                 ) : (
                   <div key={`detail-agent-${msg.data.id}`} className={`detail-agent ${msg.data.action}`}>

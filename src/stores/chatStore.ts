@@ -4,7 +4,7 @@
  * 支持流式输出和附加策略优化
  */
 import { create } from 'zustand';
-import { agentApi, ChatSession, GeneratedStrategy, ChatMessage } from '../api/agent';
+import { agentApi, ChatSession, GeneratedStrategy, ChatMessage, ToolCallEvent } from '../api/agent';
 import { UserStrategy } from '../api/strategy';
 
 // 附加策略类型（简化版，用于优化场景）
@@ -32,6 +32,8 @@ interface ChatState {
   latestStrategy: GeneratedStrategy | null;
   // 附加的策略（用于优化场景）
   attachedStrategy: AttachedStrategy | null;
+  // 工具调用状态（流式期间展示）
+  activeToolCall: ToolCallEvent | null;
   // 状态
   isLoading: boolean;
   isSending: boolean;
@@ -61,6 +63,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   streamingContent: '',
   latestStrategy: null,
   attachedStrategy: null,
+  activeToolCall: null,
   isLoading: false,
   isSending: false,
   isStreaming: false,
@@ -110,13 +113,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (attachedStrategy) {
       const codeLines = attachedStrategy.code.split('\n').length;
       const metrics = [];
-      if (attachedStrategy.return_rate !== undefined) {
+      if (attachedStrategy.return_rate != null) {
         metrics.push(`收益率: ${attachedStrategy.return_rate >= 0 ? '+' : ''}${attachedStrategy.return_rate.toFixed(1)}%`);
       }
-      if (attachedStrategy.win_rate !== undefined) {
+      if (attachedStrategy.win_rate != null) {
         metrics.push(`胜率: ${attachedStrategy.win_rate.toFixed(1)}%`);
       }
-      if (attachedStrategy.max_drawdown !== undefined) {
+      if (attachedStrategy.max_drawdown != null) {
         metrics.push(`最大回撤: ${attachedStrategy.max_drawdown.toFixed(1)}%`);
       }
       
@@ -150,15 +153,15 @@ ${attachedStrategy.code}
       isSending: true,
       isStreaming: true,
       streamingContent: '',
+      activeToolCall: null,
       error: null,
-      // 发送后清除附加策略
       attachedStrategy: null,
     });
     
     let receivedSessionId: string | null = null;
     let receivedStrategy: GeneratedStrategy | null = null;
+    let lastToolName = '';
     
-    // 开始流式请求（发送完整消息）
     const controller = agentApi.chatStrategyStream(
       fullMessage,
       {
@@ -167,9 +170,25 @@ ${attachedStrategy.code}
           set({ currentSessionId: sessionId });
         },
         
+        onToolCall: (event) => {
+          if (event.status === 'running') {
+            lastToolName = event.tool;
+            set({ activeToolCall: { ...event } });
+          } else {
+            set({ activeToolCall: { ...event, tool: lastToolName || event.tool } });
+            setTimeout(() => {
+              const current = get().activeToolCall;
+              if (current && current.status === 'done') {
+                set({ activeToolCall: null });
+              }
+            }, 1500);
+          }
+        },
+        
         onToken: (content) => {
           set((state) => ({
             streamingContent: state.streamingContent + content,
+            activeToolCall: null,
           }));
         },
         
@@ -190,6 +209,7 @@ ${attachedStrategy.code}
           set((state) => ({
             messages: [...state.messages, assistantMessage],
             streamingContent: '',
+            activeToolCall: null,
             isSending: false,
             isStreaming: false,
             streamController: null,

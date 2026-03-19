@@ -56,11 +56,20 @@ export interface ValidationResult {
   }>;
 }
 
+// 工具调用事件
+export interface ToolCallEvent {
+  tool: string;
+  params?: Record<string, unknown>;
+  status: 'running' | 'done';
+  result?: string;
+}
+
 // SSE 事件回调类型
 export interface StreamCallbacks {
   onSession?: (sessionId: string) => void;
   onToken?: (content: string) => void;
   onStrategy?: (strategy: GeneratedStrategy) => void;
+  onToolCall?: (event: ToolCallEvent) => void;
   onDone?: (fullContent: string) => void;
   onError?: (message: string) => void;
 }
@@ -161,6 +170,20 @@ export const agentApi = {
             switch (currentEvent) {
               case 'session':
                 callbacks.onSession?.(data.session_id);
+                break;
+              case 'action':
+                callbacks.onToolCall?.({
+                  tool: data.tool,
+                  params: data.params,
+                  status: 'running',
+                });
+                break;
+              case 'observation':
+                callbacks.onToolCall?.({
+                  tool: '',
+                  status: 'done',
+                  result: typeof data.result === 'string' ? data.result : JSON.stringify(data.result),
+                });
                 break;
               case 'token':
                 callbacks.onToken?.(data.content);

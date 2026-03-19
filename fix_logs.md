@@ -10,6 +10,84 @@
 
 ### 已修复
 
+#### 胜率显示不正确 + NaN 替代回退
+- **问题**: 胜率前端始终显示50%，后台日志却是66.67%
+- **根因**: `_build_stats` 中缺失数据默认为 0 而非 NaN，掩盖了问题；tqsdk_stat 可能不含 win_rate 字段
+- **修复**: 
+  - BacktestStats 所有统计字段默认 NaN，`to_dict()` 中 NaN → null（JSON）/ "NaN"（win_rate 字符串）
+  - 去掉所有回退机制：数据没获取到就显示 NaN，方便排查
+  - 添加详细 trade_pnl 逐笔日志和 tqsdk_stat keys 日志
+- **文件**: `AgentTrader/src/strategy/backtest.py`, `OpenTrader/src/stores/backtestStore.ts`, `OpenTrader/src/pages/backtest/BacktestStream.tsx`
+
+#### Agent 消息卡片显示原始 JSON 字符串
+- **问题**: 回测 Agent 分析结果卡片渲染了 markdown 文本，但末尾还附带了原始 JSON 代码块
+- **根因**: `analyze_for_backtest` 中 JSON 解析失败时，把 Agent 完整回复（含 JSON 代码块）作为 analysis 展示
+- **修复**: 重写 JSON 提取逻辑 `_extract_json_from_response`，支持三种策略：
+  1. 直接解析纯 JSON
+  2. 提取 \`\`\`json ... \`\`\` 代码块中的 JSON
+  3. 正则匹配含 should_adjust 的 JSON 对象
+  4. 全部失败时，去掉 JSON 代码块后返回纯文本 analysis
+- **文件**: `AgentTrader/src/agent/react_agent.py`
+
+#### 检测周期输入框 01/012 问题
+- **问题**: 删除所有数字后出现不可消除的 0，后续输入变成 01、012
+- **根因**: `type="number"` + `Number("")=0` → state 设为 0 → input 显示 "0" → 追加数字变 "01"
+- **修复**: 改为 `type="text" inputMode="numeric"`，用独立字符串状态管理输入，失焦时 clamp 到 [5, 365]
+- **文件**: `OpenTrader/src/pages/backtest/BacktestStream.tsx`
+
+#### 测试覆盖
+- 26 个测试全部通过（`tests/test_backtest_stats.py`），包含：NaN 默认值、JSON 提取策略、各种胜负场景
+
+**回测 Agent 工具调用细节消息卡片** [前端+后端]
+   - 问题：回测时 Agent 分析只显示一条笼统的 "正在分析" 消息，没有展示具体调用了哪些工具
+   - 修复：
+     1. 后端 `run_stream_with_agent` 在 Agent 分析过程中逐步 yield `agent_tool` 事件（get_recent_trades → get_strategy_params → analyze_and_decide），每个工具有 running/done 两个状态
+     2. 前端新增 `AgentToolMessage` 类型和 `agent_tool` 消息卡片组件
+     3. running 状态显示 spinner 动画 + "调用 xxx 工具中..."
+     4. done 状态显示 ✓ + 工具名 + 结果摘要
+   - 修改文件：`src/strategy/backtest.py`（后端）、`src/stores/backtestStore.ts`、`src/pages/backtest/BacktestStream.tsx`、`src/pages/backtest/BacktestStream.css`
+
+**回测统计数据前后端不一致（胜率等）** [后端 - 根因修复]
+   - 问题：后台日志显示胜率 100% 但前端显示 50%，反复修复未解决
+   - **根因**：`tqsdk_stat` 在 `api.close()` **之后**才被访问！TqSim 关闭后统计数据不可用，导致始终走手动回退计算路径。TqSdk 文档明确示例中 `tqsdk_stat` 必须在 `BacktestFinished` 异常中、`api.close()` 之前访问
+   - 修复：
+     1. 新增 `_capture_tqsim_stat()` 方法，在 `except BacktestFinished` 块中（api.close 之前）捕获统计数据
+     2. 新增 `_build_stats()` 方法替代旧的 `_calculate_stats_from_tqsim()`，逻辑更清晰：先手动计算胜率，再用 TqSim 原生数据覆盖
+     3. 两个代码路径（run_stream / run_stream_with_agent）都已修复
+     4. 添加详细日志：交易统计明细 + 最终发送到前端的 stats 值
+   - 测试：20 个单元测试全部通过（`tests/test_backtest_stats.py`）
+   - 修改文件：`src/strategy/backtest.py`
+
+**AI对话界面附加策略时报错 toFixed** [前端]
+   - 问题：当附加策略后发送消息时报错 `Cannot read properties of null (reading 'toFixed')`
+   - 原因：`chatStore.ts` 中检查 `!== undefined` 不能排除 `null`，当 `win_rate` 等值为 `null` 时调用 `toFixed()` 报错
+   - 修复：将 `!== undefined` 改为 `!= null`（同时排除 `null` 和 `undefined`）
+   - 修改文件：`src/stores/chatStore.ts`
+
+**回测界面 Agent 分析结果 Markdown 渲染 + 工具调用动画** [前端]
+   - 问题：Agent 分析结果显示为纯文本，内容挤在一起；调用工具时没有加载提示
+   - 修复：
+     1. 添加 `formatAgentText` 函数处理 Markdown 格式（加粗、斜体、行内代码）
+     2. 为 "analyzing" 状态添加加载动画和 "调用分析工具中..." 提示
+     3. 添加相关 CSS 样式（`.agent-tool-loading`、`.tool-spinner`）
+   - 修改文件：`src/pages/backtest/BacktestStream.tsx`、`src/pages/backtest/BacktestStream.css`
+
+**回测 Agent 修改策略代码能力说明** [设计说明]
+   - 问题：用户询问回测 Agent 能否修改策略代码
+   - 说明：当前设计下回测 Agent **只能修改策略参数**，不能修改代码。这是合理的设计：
+     1. 回测过程中修改代码需要重新加载策略，会中断当前回测
+     2. 参数调整是在线优化的常见做法
+     3. 如需修改代码，应先完成回测，然后通过 AI 对话界面的 "优化策略" 功能进行
+
+**回测界面胜率等统计数据显示错误** [前端+后端]
+   - 问题：前端显示的胜率一直是 50%，与 TqSim 日志显示的 66.67% 不一致
+   - 原因：后端手动计算统计数据，未使用 TqSim 的原生统计 `tqsdk_stat`
+   - 修复：
+     1. 后端新增 `_calculate_stats_from_tqsim` 方法，优先使用 TqSim 的原生统计数据
+     2. 扩展 `BacktestStats` 数据类，添加收益率、年化收益、盈亏比、夏普率、索提诺比率等字段
+     3. 前端 `BacktestStats` 类型和统计展示区域支持新字段
+   - 修改文件：`src/strategy/backtest.py`（后端）、`src/stores/backtestStore.ts`（前端）、`src/pages/backtest/BacktestStream.tsx`（前端）
+
 **AI 对话界面移动端适配** [前端]
    - 问题：
      1. 左侧历史对话栏在移动端会遮挡主内容，无法输入

@@ -506,6 +506,58 @@
   margin-left: 8px;
 }
 
+/* Agent 工具调用卡片 */
+.agent-tool-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  animation: slideIn 0.3s ease;
+}
+
+.agent-tool-card.running {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.agent-tool-card.done {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+}
+
+.agent-tool-card .tool-check {
+  font-size: 14px;
+  color: #10b981;
+  font-weight: bold;
+}
+
+.agent-tool-card .tool-text {
+  font-weight: 500;
+}
+
+.agent-tool-card .tool-text code {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 0.9em;
+}
+
+.agent-tool-card .tool-result {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Agent 消息卡片样式 */
 .agent-message {
   padding: 16px;
@@ -627,6 +679,60 @@
   font-size: 13px;
   color: var(--color-text-secondary);
   font-style: italic;
+}
+
+/* Agent 工具调用动画 */
+.agent-tool-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.tool-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fcd34d;
+  border-top-color: #f59e0b;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Agent 文本中的 inline code */
+.agent-text code.inline-code {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 0.9em;
+}
+
+.agent-reason code.inline-code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 0.9em;
 }
 
 /* 消息头部样式 */
@@ -841,6 +947,32 @@
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 12px;
+}
+
+.detail-agent-tool {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  background: #f0fdf4;
+  border-left: 3px solid #86efac;
+  color: #065f46;
+}
+
+.detail-agent-tool code {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.detail-tool-result {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  font-size: 11px;
 }
 
 @keyframes slideUp {

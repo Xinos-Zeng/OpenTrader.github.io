@@ -28,10 +28,20 @@ export interface AgentMessage {
   params_after?: Record<string, number>;
 }
 
+// Agent 工具调用消息
+export interface AgentToolMessage {
+  id: number;
+  time: string;
+  tool_name: string;
+  status: 'running' | 'done';
+  result?: string;
+}
+
 // 统一消息类型
 export type StreamMessage = 
   | { type: 'trade'; data: TradeMessage }
-  | { type: 'agent'; data: AgentMessage };
+  | { type: 'agent'; data: AgentMessage }
+  | { type: 'agent_tool'; data: AgentToolMessage };
 
 export interface BacktestStats {
   total_trades: number;
@@ -39,8 +49,13 @@ export interface BacktestStats {
   loss_count: number;
   total_profit: number;
   win_rate: string;
-  max_drawdown: number;
+  max_drawdown: number | null;
   final_balance: number;
+  return_rate?: number;
+  annual_return?: number | null;
+  profit_loss_ratio?: number | null;
+  sharpe_ratio?: number | null;
+  sortino_ratio?: number | null;
 }
 
 interface BacktestState {
@@ -193,6 +208,40 @@ export const useBacktestStore = create<BacktestState>((set, get) => ({
                 case 'trade':
                   currentState._addTrade(event.data);
                   break;
+                case 'agent_tool': {
+                  const toolTime = event.data.current_date || currentState.currentDate || '';
+                  if (event.data.status === 'running') {
+                    // 新增一条 loading 状态的工具消息
+                    set((state) => ({
+                      messages: [...state.messages, {
+                        type: 'agent_tool' as const,
+                        data: {
+                          id: ++agentMsgCounter,
+                          time: toolTime,
+                          tool_name: event.data.tool_name,
+                          status: 'running' as const,
+                        }
+                      }]
+                    }));
+                  } else if (event.data.status === 'done') {
+                    // 找到最后一条同名 running 的工具消息，更新为 done
+                    set((state) => {
+                      const msgs = [...state.messages];
+                      for (let i = msgs.length - 1; i >= 0; i--) {
+                        const m = msgs[i];
+                        if (m.type === 'agent_tool' && m.data.tool_name === event.data.tool_name && m.data.status === 'running') {
+                          msgs[i] = {
+                            type: 'agent_tool',
+                            data: { ...m.data, status: 'done', result: event.data.result }
+                          };
+                          break;
+                        }
+                      }
+                      return { messages: msgs };
+                    });
+                  }
+                  break;
+                }
                 case 'agent':
                   currentState._addAgentMessage({
                     ...event.data,

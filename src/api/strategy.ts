@@ -64,7 +64,7 @@ export const strategyApi = {
     return response.data;
   },
 
-  getParams: async (strategyName: string = 'ma_strategy') => {
+  getParams: async (strategyName: string = 'ma_cross') => {
     const response = await api.get<ApiResponse<StrategyParams>>('/api/strategy/params', {
       params: { strategy_name: strategyName },
     });
@@ -80,7 +80,7 @@ export const strategyApi = {
     return response.data;
   },
 
-  getParamsHistory: async (strategyName: string = 'ma_strategy', limit: number = 10) => {
+  getParamsHistory: async (strategyName: string = 'ma_cross', limit: number = 10) => {
     const response = await api.get<ApiResponse<Record<string, unknown>[]>>('/api/strategy/params/history', {
       params: { strategy_name: strategyName, limit },
     });

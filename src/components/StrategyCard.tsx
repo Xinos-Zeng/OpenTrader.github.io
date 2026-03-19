@@ -9,9 +9,9 @@ interface StrategyCardProps {
 
 export default function StrategyCard({ strategy, isSelected, onClick }: StrategyCardProps) {
   const strategyIcons: Record<string, string> = {
-    ma_strategy: '📈',
-    macd_strategy: '📊',
-    bollinger_strategy: '📉',
+    ma_cross: '📈',
+    rsi: '📊',
+    bollinger: '📉',
   };
 
   const icon = strategyIcons[strategy.name] || '📊';

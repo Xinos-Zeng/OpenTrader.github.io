@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import ChatMessage from '../components/ChatMessage';
+import ToolCallCard from '../components/ToolCallCard';
 import Toast from '../components/Toast';
 import AttachedStrategyCard from '../components/AttachedStrategyCard';
 import { useChatStore, AttachedStrategy } from '../stores/chatStore';
@@ -25,6 +26,7 @@ export default function Agent() {
     streamingContent,
     latestStrategy,
     attachedStrategy,
+    activeToolCall,
     isLoading,
     isSending,
     isStreaming,
@@ -260,6 +262,15 @@ export default function Agent() {
                     onBacktestStrategy={handleBacktest}
                   />
                 ))}
+                {/* 工具调用卡片 */}
+                {activeToolCall && (
+                  <ToolCallCard
+                    toolName={activeToolCall.tool}
+                    status={activeToolCall.status}
+                    result={activeToolCall.result}
+                    compact
+                  />
+                )}
                 {/* 流式输出的临时内容 */}
                 {isStreaming && streamingContent && (
                   <ChatMessage
@@ -272,7 +283,7 @@ export default function Agent() {
                   />
                 )}
                 {/* 等待开始的指示器 */}
-                {isSending && !streamingContent && (
+                {isSending && !streamingContent && !activeToolCall && (
                   <div className="typing-indicator">
                     <span></span>
                     <span></span>
