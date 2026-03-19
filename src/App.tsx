@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { useStrategyStore } from './stores/strategyStore';
 
@@ -53,7 +53,7 @@ function GlobalToast() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <>
       <GlobalToast />
       <Routes>
         {/* 公开路由 */}
@@ -134,6 +134,6 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
-    </BrowserRouter>
+    </>
   );
 }

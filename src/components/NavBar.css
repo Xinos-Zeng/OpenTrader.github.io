@@ -24,6 +24,8 @@
   font-weight: 700;
   color: var(--color-gray-900);
   text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .navbar-logo span {
@@ -33,6 +35,8 @@
 .navbar-links {
   display: flex;
   gap: 4px;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .navbar-link {
@@ -43,6 +47,7 @@
   color: var(--color-gray-500);
   text-decoration: none;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .navbar-link:hover {
@@ -60,11 +65,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .navbar-username {
   font-size: 14px;
   color: var(--color-gray-500);
+  white-space: nowrap;
 }
 
 .navbar-logout {
@@ -76,6 +83,7 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .navbar-logout:hover {
@@ -83,8 +91,75 @@
   color: var(--color-gray-700);
 }
 
+/* ===== 平板适配 (≤ 900px) ===== */
+@media (max-width: 900px) {
+  .navbar-link {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+/* ===== 移动端适配 (≤ 640px) ===== */
 @media (max-width: 640px) {
   .navbar-username {
     display: none;
+  }
+
+  /* 切换为两行布局：第一行 Logo+用户，第二行导航链接 */
+  .navbar-content {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 0;
+    gap: 0;
+    align-items: center;
+  }
+
+  .navbar-logo {
+    font-size: 17px;
+  }
+
+  .navbar-links {
+    order: 3;             /* 排在最后，撑满第二行 */
+    width: 100%;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;     /* 超宽时横向滚动，不折行 */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    gap: 2px;
+  }
+
+  /* 隐藏滚动条但保留滚动功能 */
+  .navbar-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navbar-link {
+    padding: 6px 10px;
+    font-size: 12px;
+    flex-shrink: 0;       /* 禁止压缩，保持完整文字 */
+  }
+
+  .navbar-user {
+    order: 2;
+    gap: 6px;
+  }
+
+  .navbar-logout {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+}
+
+/* ===== 超小屏 (≤ 360px) ===== */
+@media (max-width: 360px) {
+  .navbar-logo {
+    font-size: 15px;
+  }
+
+  .navbar-link {
+    padding: 5px 8px;
+    font-size: 11px;
   }
 }

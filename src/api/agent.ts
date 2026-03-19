@@ -76,7 +76,8 @@ export interface StreamCallbacks {
 
 // Agent 对话需要更长的超时时间（LLM 生成策略较慢）
 const AGENT_TIMEOUT = 120000; // 120 秒
-const STREAM_TOKEN_TIMEOUT = 60000; // 60 秒无新 token 则超时
+// 后端每 15s 发送一次心跳注释，此值设为 30s 即可（保留充足冗余）
+const STREAM_TOKEN_TIMEOUT = 30000; // 30 秒无任何数据（含心跳）则超时
 
 /**
  * 获取 API 基础 URL
