@@ -72,12 +72,14 @@ export interface StreamCallbacks {
   onToolCall?: (event: ToolCallEvent) => void;
   onDone?: (fullContent: string) => void;
   onError?: (message: string) => void;
+  /** HTTP 流已读完时调用（无论是否收到 event: done）；用于收尾 UI，避免一直显示「中断」 */
+  onStreamComplete?: (info: { receivedDone: boolean }) => void;
 }
 
-// Agent 对话需要更长的超时时间（LLM 生成策略较慢）
-const AGENT_TIMEOUT = 120000; // 120 秒
-// 后端每 15s 发送一次心跳注释，此值设为 30s 即可（保留充足冗余）
-const STREAM_TOKEN_TIMEOUT = 30000; // 30 秒无任何数据（含心跳）则超时
+const AGENT_TIMEOUT = 120000;
+/** 两次读流之间的最大间隔（与后端 5s 心跳 + 代理缓冲对齐，避免误判超时） */
+const STREAM_IDLE_TIMEOUT = 120000;
+const STREAM_TOOL_TIMEOUT = 300000;
 
 /**
  * 获取 API 基础 URL
@@ -125,14 +127,14 @@ export const agentApi = {
     }
     const url = `${getApiBaseUrl()}/api/agent/chat/strategy/stream?${params.toString()}`;
     
-    // 超时处理
     let timeoutId: NodeJS.Timeout | null = null;
+    let currentTimeoutMs = STREAM_IDLE_TIMEOUT;
     const resetTimeout = () => {
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
-        callbacks.onError?.('请求超时：60秒内未收到新内容');
+        callbacks.onError?.(`请求超时：${Math.round(currentTimeoutMs / 1000)}秒内未收到新内容`);
         controller.abort();
-      }, STREAM_TOKEN_TIMEOUT);
+      }, currentTimeoutMs);
     };
     
     // 开始请求
@@ -172,7 +174,12 @@ export const agentApi = {
               case 'session':
                 callbacks.onSession?.(data.session_id);
                 break;
+              case 'heartbeat':
+                // 与 reader.read() 重置并列：显式防止解析顺序导致漏重置
+                resetTimeout();
+                break;
               case 'action':
+                currentTimeoutMs = STREAM_TOOL_TIMEOUT;
                 callbacks.onToolCall?.({
                   tool: data.tool,
                   params: data.params,
@@ -180,6 +187,7 @@ export const agentApi = {
                 });
                 break;
               case 'observation':
+                currentTimeoutMs = STREAM_IDLE_TIMEOUT;
                 callbacks.onToolCall?.({
                   tool: '',
                   status: 'done',
@@ -187,6 +195,7 @@ export const agentApi = {
                 });
                 break;
               case 'token':
+                currentTimeoutMs = STREAM_IDLE_TIMEOUT;
                 callbacks.onToken?.(data.content);
                 break;
               case 'strategy':
@@ -258,12 +267,15 @@ export const agentApi = {
         if (!receivedDone) {
           console.warn('SSE 流结束但未收到 done 事件');
         }
+        callbacks.onStreamComplete?.({ receivedDone });
       })
       .catch((err) => {
         if (timeoutId) clearTimeout(timeoutId);
         if (err.name !== 'AbortError') {
           callbacks.onError?.(err.message || '请求失败');
         }
+        // 网络/HTTP 错误时也要结束流式态（onError 已清理时此处为双保险）
+        callbacks.onStreamComplete?.({ receivedDone: false });
       });
     
     return controller;

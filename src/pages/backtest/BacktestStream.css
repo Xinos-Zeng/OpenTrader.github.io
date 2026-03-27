@@ -324,7 +324,7 @@
 }
 
 .finance-value {
-  font-weight: 500;
+  font-weight: 400;
   font-size: 12px;
   color: var(--color-text);
 }
@@ -615,6 +615,19 @@
   margin-left: auto;
   font-size: 12px;
   color: var(--color-text-secondary);
+}
+
+/* 合并卡片内：嵌套工具列表 */
+.agent-bundle-tools {
+  margin: 0 0 12px 28px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 10px;
+  border: 1px solid rgba(99, 102, 241, 0.12);
+}
+
+.agent-bundle .agent-content {
+  margin-top: 4px;
 }
 
 .agent-content {
@@ -947,6 +960,38 @@
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 12px;
+}
+
+.detail-agent-bundle {
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.detail-agent-bundle-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.detail-bundle-pending {
+  font-size: 12px;
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.detail-tool-input {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  word-break: break-all;
 }
 
 .detail-agent-tool {

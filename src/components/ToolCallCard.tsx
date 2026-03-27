@@ -11,26 +11,35 @@ interface ToolCallCardProps {
   status: 'running' | 'done';
   result?: string;
   compact?: boolean;
+  step?: number;
+  meta?: string;
 }
 
-export default function ToolCallCard({ toolName, status, result, compact }: ToolCallCardProps) {
+export default function ToolCallCard({ toolName, status, result, compact, step, meta }: ToolCallCardProps) {
   return (
     <div className={`tool-call-card ${status} ${compact ? 'compact' : ''}`}>
       {status === 'running' ? (
         <>
           <span className="tcc-spinner" />
           <span className="tcc-body">
-            <span className="tcc-label">调用工具</span>
+            <span className="tcc-label">
+              调用工具{typeof step === 'number' ? ` #${step}` : ''}
+            </span>
             <span className="tcc-name-scroll">
               <code className="tcc-name">{toolName}</code>
             </span>
+            {meta && <span className="tcc-meta">{meta}</span>}
           </span>
         </>
       ) : (
         <>
           <span className="tcc-check">✓</span>
           <span className="tcc-body">
-            <code className="tcc-name">{toolName}</code>
+            <code className="tcc-name">
+              {typeof step === 'number' ? `#${step} ` : ''}
+              {toolName}
+            </code>
+            {meta && <span className="tcc-meta">{meta}</span>}
             {result && <span className="tcc-result">{result}</span>}
           </span>
         </>

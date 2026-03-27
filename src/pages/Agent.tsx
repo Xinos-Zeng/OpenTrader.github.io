@@ -27,6 +27,7 @@ export default function Agent() {
     latestStrategy,
     attachedStrategy,
     activeToolCall,
+    toolCallHistory,
     isLoading,
     isSending,
     isStreaming,
@@ -133,9 +134,8 @@ export default function Agent() {
     }
   };
 
-  // 回测策略 - 直接跳转到回测页面，传递策略代码
+  // 回测：使用当前消息附带的策略（与后端 event:strategy / 会话保存一致，为最终解析出的代码）
   const handleBacktest = (strategy: GeneratedStrategy) => {
-    // 通过 state 传递策略代码到回测页面
     navigate('/backtest/stream', {
       state: {
         agentStrategy: {
@@ -157,6 +157,18 @@ export default function Agent() {
     if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`;
     return date.toLocaleDateString('zh-CN');
+  };
+
+  const formatToolMeta = (startedAt: number, durationMs?: number) => {
+    const start = new Date(startedAt).toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    if (typeof durationMs === 'number') {
+      return `${start} · ${Math.max(0, durationMs / 1000).toFixed(1)}s`;
+    }
+    return `${start} · 进行中`;
   };
 
   return (
@@ -262,15 +274,6 @@ export default function Agent() {
                     onBacktestStrategy={handleBacktest}
                   />
                 ))}
-                {/* 工具调用卡片 */}
-                {activeToolCall && (
-                  <ToolCallCard
-                    toolName={activeToolCall.tool}
-                    status={activeToolCall.status}
-                    result={activeToolCall.result}
-                    compact
-                  />
-                )}
                 {/* 流式输出的临时内容 */}
                 {isStreaming && streamingContent && (
                   <ChatMessage
@@ -282,8 +285,24 @@ export default function Agent() {
                     onBacktestStrategy={handleBacktest}
                   />
                 )}
+                {/* 工具调用卡片：放在 AI 消息下方，按时间从上到下平铺并保留历史 */}
+                {toolCallHistory.length > 0 && (
+                  <div className="tool-call-stack">
+                    {toolCallHistory.map((toolEvt, idx) => (
+                      <ToolCallCard
+                        key={`${toolEvt.tool}-${idx}`}
+                        toolName={toolEvt.tool}
+                        status={toolEvt.status}
+                        result={toolEvt.result}
+                        step={toolEvt.step}
+                        meta={formatToolMeta(toolEvt.startedAt, toolEvt.durationMs)}
+                        compact
+                      />
+                    ))}
+                  </div>
+                )}
                 {/* 等待开始的指示器 */}
-                {isSending && !streamingContent && !activeToolCall && (
+                {isSending && !streamingContent && !activeToolCall && toolCallHistory.length === 0 && (
                   <div className="typing-indicator">
                     <span></span>
                     <span></span>

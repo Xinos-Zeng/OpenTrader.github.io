@@ -10,7 +10,7 @@ import NavBar from '../../components/NavBar';
 import { Modal } from '../../components/Modal';
 import { Select, DatePicker, Checkbox } from '../../components/FormControls';
 import { useStrategyStore } from '../../stores/strategyStore';
-import { useBacktestStore, type StreamMessage } from '../../stores/backtestStore';
+import { useBacktestStore, type AgentBundleMessage } from '../../stores/backtestStore';
 import { useChatStore, type AttachedStrategy } from '../../stores/chatStore';
 import { favoritesApi } from '../../api/favorites';
 import { strategyApi } from '../../api/strategy';
@@ -38,6 +38,102 @@ function formatAgentText(text: string): string {
   // 换行
   formatted = formatted.replace(/\n/g, '<br />');
   return formatted;
+}
+
+function formatMoney(value?: number | null): string {
+  if (value == null || Number.isNaN(value)) return '-';
+  return value.toLocaleString('zh-CN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function truncateMeta(s: string, max = 100): string {
+  const t = s.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max)}…`;
+}
+
+/** 单次 Agent 分析：工具列表 + 结论，合并为一张「Agent 量化助手」卡片 */
+function AgentBundleCard({
+  bundle,
+  formatAgentText: fmt,
+}: {
+  bundle: AgentBundleMessage;
+  formatAgentText: (text: string) => string;
+}) {
+  const visualAction = bundle.agent?.action ?? (bundle.pending ? 'analyzing' : 'no_change');
+  const showHeaderLoading = bundle.pending && !bundle.agent;
+
+  return (
+    <div className={`agent-message agent-bundle ${visualAction}`}>
+      <div className="agent-header">
+        <span className="agent-icon">🤖</span>
+        <span className="agent-title">Agent 量化助手</span>
+        {showHeaderLoading && (
+          <span className="agent-tool-loading">
+            <span className="tool-spinner" />
+            分析执行中…
+          </span>
+        )}
+        <span className="agent-time">{bundle.time}</span>
+      </div>
+      {bundle.tools.length > 0 && (
+        <div className="agent-bundle-tools">
+          {bundle.tools.map((t, i) => (
+            <ToolCallCard
+              key={`${t.tool_call_id || 't'}-${t.id}-${i}`}
+              toolName={t.tool_name}
+              status={t.status}
+              result={t.result}
+              compact
+              step={i + 1}
+              meta={t.input ? truncateMeta(t.input) : undefined}
+            />
+          ))}
+        </div>
+      )}
+      {bundle.agent && (
+        <div className="agent-content">
+          <p
+            className="agent-text"
+            dangerouslySetInnerHTML={{ __html: fmt(bundle.agent.message) }}
+          />
+          {bundle.agent.action === 'adjusted' &&
+            bundle.agent.params_before &&
+            bundle.agent.params_after && (
+              <div className="agent-params-change">
+                <div className="params-before">
+                  <span className="label">调整前：</span>
+                  {Object.entries(bundle.agent.params_before).map(([k, v]) => (
+                    <span key={k} className="param">
+                      {k}={v}
+                    </span>
+                  ))}
+                </div>
+                <div className="params-arrow">→</div>
+                <div className="params-after">
+                  <span className="label">调整后：</span>
+                  {Object.entries(bundle.agent.params_after).map(([k, v]) => (
+                    <span key={k} className="param">
+                      {k}={v}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          {bundle.agent.reason && (
+            <p
+              className="agent-reason"
+              dangerouslySetInnerHTML={{
+                __html: '💡 ' + fmt(bundle.agent.reason),
+              }}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function BacktestStream() {
@@ -120,7 +216,7 @@ export default function BacktestStream() {
     if (messageEndRef.current) {
       messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [trades]);
+  }, [trades, messages.length]);
   
   // 离开页面时取消回测
   useEffect(() => {
@@ -347,7 +443,7 @@ export default function BacktestStream() {
                 />
             </div>
             <div className={`agent-interval-inline ${!config.agentEnabled ? 'disabled' : ''}`}>
-              <span className="interval-label">检测周期</span>
+              <span className="interval-label">分析周期</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -426,7 +522,13 @@ export default function BacktestStream() {
             )}
             
             {messages.map((msg, idx) => 
-              msg.type === 'agent_tool' ? (
+              msg.type === 'agent_bundle' ? (
+                <AgentBundleCard
+                  key={`bundle-${msg.data.id}`}
+                  bundle={msg.data}
+                  formatAgentText={formatAgentText}
+                />
+              ) : msg.type === 'agent_tool' ? (
                 <ToolCallCard
                   key={`tool-${msg.data.id}-${msg.data.tool_name}`}
                   toolName={msg.data.tool_name}
@@ -452,25 +554,25 @@ export default function BacktestStream() {
                   <div className="trade-finance">
                     <div className="finance-item">
                       <span className="finance-label">余额</span>
-                      <span className="finance-value">{msg.data.balance?.toLocaleString() ?? '-'}</span>
+                      <span className="finance-value">{formatMoney(msg.data.balance)}</span>
                     </div>
-                    {msg.data.trade_pnl !== undefined && msg.data.trade_pnl !== 0 && (
+                    {msg.data.floating_pnl !== undefined && (
                       <div className="finance-item">
-                        <span className="finance-label">平仓盈亏</span>
-                        <span className={`finance-value ${msg.data.trade_pnl >= 0 ? 'profit' : 'loss'}`}>
-                          {msg.data.trade_pnl >= 0 ? '+' : ''}{msg.data.trade_pnl.toLocaleString()}
+                        <span className="finance-label">浮动盈亏</span>
+                        <span className={`finance-value ${msg.data.floating_pnl >= 0 ? 'profit' : 'loss'}`}>
+                          {msg.data.floating_pnl >= 0 ? '+' : ''}{formatMoney(msg.data.floating_pnl)}
                         </span>
                       </div>
                     )}
                     <div className="finance-item">
                       <span className="finance-label">累计盈亏</span>
                       <span className={`finance-value ${(msg.data.realized_pnl ?? 0) >= 0 ? 'profit' : 'loss'}`}>
-                        {(msg.data.realized_pnl ?? 0) >= 0 ? '+' : ''}{msg.data.realized_pnl?.toLocaleString() ?? '0'}
+                        {(msg.data.realized_pnl ?? 0) >= 0 ? '+' : ''}{formatMoney(msg.data.realized_pnl)}
                       </span>
                     </div>
                     <div className="finance-item">
                       <span className="finance-label">持仓市值</span>
-                      <span className="finance-value">{msg.data.market_value?.toLocaleString() ?? '-'}</span>
+                      <span className="finance-value">{formatMoney(msg.data.market_value)}</span>
                     </div>
                   </div>
                 </div>
@@ -760,16 +862,43 @@ export default function BacktestStream() {
                       <span className="detail-reason">{msg.data.reason}</span>
                     </div>
                     <div className="detail-trade-finance">
-                      <span>余额: {msg.data.balance?.toLocaleString()}</span>
-                      {msg.data.trade_pnl !== undefined && msg.data.trade_pnl !== 0 && (
-                        <span className={msg.data.trade_pnl >= 0 ? 'profit' : 'loss'}>
-                          盈亏: {msg.data.trade_pnl >= 0 ? '+' : ''}{msg.data.trade_pnl.toLocaleString()}
+                      <span>余额: {formatMoney(msg.data.balance)}</span>
+                      {msg.data.floating_pnl !== undefined && (
+                        <span className={msg.data.floating_pnl >= 0 ? 'profit' : 'loss'}>
+                          浮盈: {msg.data.floating_pnl >= 0 ? '+' : ''}{formatMoney(msg.data.floating_pnl)}
                         </span>
                       )}
                       <span className={(msg.data.realized_pnl ?? 0) >= 0 ? 'profit' : 'loss'}>
-                        累计: {(msg.data.realized_pnl ?? 0) >= 0 ? '+' : ''}{msg.data.realized_pnl?.toLocaleString()}
+                        累计: {(msg.data.realized_pnl ?? 0) >= 0 ? '+' : ''}{formatMoney(msg.data.realized_pnl)}
                       </span>
                     </div>
+                  </div>
+                ) : msg.type === 'agent_bundle' ? (
+                  <div key={`detail-bundle-${msg.data.id}`} className="detail-agent-bundle">
+                    <div className="detail-agent-bundle-head">
+                      <span className="detail-time">{msg.data.time}</span>
+                      <span className="detail-agent-icon">🤖</span>
+                      <strong>Agent 量化助手</strong>
+                      {msg.data.pending && !msg.data.agent && <span className="detail-bundle-pending">分析中</span>}
+                    </div>
+                    {msg.data.tools.map((t, ti) => (
+                      <div key={`dt-${t.id}-${ti}`} className={`detail-agent-tool ${t.status}`}>
+                        <span>{t.status === 'done' ? '✓' : '⏳'}</span>
+                        <code>{t.tool_name}</code>
+                        {t.input && <span className="detail-tool-input">{truncateMeta(t.input, 200)}</span>}
+                        {t.result && <span className="detail-tool-result">{t.result}</span>}
+                      </div>
+                    ))}
+                    {msg.data.agent && (
+                      <div className={`detail-agent ${msg.data.agent.action}`}>
+                        <span className="detail-agent-msg">{msg.data.agent.message}</span>
+                        {msg.data.agent.action === 'adjusted' && msg.data.agent.params_after && (
+                          <span className="detail-params">
+                            → {Object.entries(msg.data.agent.params_after).map(([k, v]) => `${k}=${v}`).join(', ')}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : msg.type === 'agent_tool' ? (
                   <div key={`detail-tool-${msg.data.id}`} className={`detail-agent-tool ${msg.data.status}`}>

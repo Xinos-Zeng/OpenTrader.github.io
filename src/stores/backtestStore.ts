@@ -35,13 +35,27 @@ export interface AgentToolMessage {
   tool_name: string;
   status: 'running' | 'done';
   result?: string;
+  input?: string;
+  tool_call_id?: string;
+  backtest_run_id?: string;
+}
+
+/** 单次分析周期：工具调用 + 最终结论，对应一张「Agent 量化助手」卡片 */
+export interface AgentBundleMessage {
+  id: number;
+  time: string;
+  tools: AgentToolMessage[];
+  agent?: AgentMessage;
+  /** 收到首条工具 running 至收到 agent 事件前为 true */
+  pending: boolean;
 }
 
 // 统一消息类型
 export type StreamMessage = 
   | { type: 'trade'; data: TradeMessage }
   | { type: 'agent'; data: AgentMessage }
-  | { type: 'agent_tool'; data: AgentToolMessage };
+  | { type: 'agent_tool'; data: AgentToolMessage }
+  | { type: 'agent_bundle'; data: AgentBundleMessage };
 
 export interface BacktestStats {
   total_trades: number;
@@ -57,6 +71,21 @@ export interface BacktestStats {
   sharpe_ratio?: number | null;
   sortino_ratio?: number | null;
 }
+
+const DEFAULT_STATS: BacktestStats = {
+  total_trades: 0,
+  win_count: 0,
+  loss_count: 0,
+  total_profit: 0,
+  win_rate: '0.0%',
+  max_drawdown: 0,
+  final_balance: 0,
+  return_rate: 0,
+  annual_return: 0,
+  profit_loss_ratio: 0,
+  sharpe_ratio: 0,
+  sortino_ratio: 0,
+};
 
 interface BacktestState {
   isRunning: boolean;
@@ -188,6 +217,151 @@ export const useBacktestStore = create<BacktestState>((set, get) => ({
       
       const decoder = new TextDecoder();
       let buffer = '';
+
+      const handleEvent = (event: any) => {
+        const currentState = get();
+
+        switch (event.type) {
+          case 'trade':
+            currentState._addTrade(event.data);
+            break;
+          case 'agent_tool': {
+            const toolTime = event.data.current_date || currentState.currentDate || '';
+            set((state) => {
+              const msgs: StreamMessage[] = [...state.messages];
+
+              const getOrCreatePendingBundleIndex = (): number => {
+                const last = msgs[msgs.length - 1];
+                if (last?.type === 'agent_bundle' && last.data.pending) {
+                  return msgs.length - 1;
+                }
+                const bundleId = ++agentMsgCounter;
+                msgs.push({
+                  type: 'agent_bundle',
+                  data: {
+                    id: bundleId,
+                    time: toolTime,
+                    tools: [],
+                    pending: true,
+                  },
+                });
+                return msgs.length - 1;
+              };
+
+              if (event.data.status === 'running') {
+                const bi = getOrCreatePendingBundleIndex();
+                const prev = msgs[bi];
+                if (prev.type !== 'agent_bundle') return { messages: msgs };
+                const bundle = prev.data;
+                const inputRaw = event.data.input;
+                const inputStr =
+                  inputRaw == null
+                    ? undefined
+                    : typeof inputRaw === 'string'
+                      ? inputRaw
+                      : (() => {
+                          try {
+                            return JSON.stringify(inputRaw);
+                          } catch {
+                            return String(inputRaw);
+                          }
+                        })();
+                const row: AgentToolMessage = {
+                  id: ++agentMsgCounter,
+                  time: toolTime,
+                  tool_name: event.data.tool_name,
+                  status: 'running',
+                  tool_call_id: event.data.tool_call_id,
+                  backtest_run_id: event.data.backtest_run_id,
+                  input: inputStr,
+                };
+                msgs[bi] = {
+                  type: 'agent_bundle',
+                  data: { ...bundle, tools: [...bundle.tools, row] },
+                };
+                return { messages: msgs };
+              }
+
+              if (event.data.status === 'done') {
+                for (let bi = msgs.length - 1; bi >= 0; bi--) {
+                  const m = msgs[bi];
+                  if (m.type !== 'agent_bundle' || !m.data.pending) continue;
+                  const bundle = m.data;
+                  const nextTools = bundle.tools.map((t) => ({ ...t }));
+                  let hit = false;
+                  for (let i = nextTools.length - 1; i >= 0; i--) {
+                    const t = nextTools[i];
+                    if (t.status !== 'running') continue;
+                    const byCallId =
+                      !!event.data.tool_call_id && t.tool_call_id === event.data.tool_call_id;
+                    const byNameFallback =
+                      !event.data.tool_call_id && t.tool_name === event.data.tool_name;
+                    if (byCallId || byNameFallback) {
+                      nextTools[i] = {
+                        ...t,
+                        status: 'done',
+                        result: event.data.result,
+                        tool_call_id: event.data.tool_call_id ?? t.tool_call_id,
+                        backtest_run_id: event.data.backtest_run_id ?? t.backtest_run_id,
+                      };
+                      hit = true;
+                      break;
+                    }
+                  }
+                  if (hit) {
+                    msgs[bi] = { type: 'agent_bundle', data: { ...bundle, tools: nextTools } };
+                    break;
+                  }
+                }
+                return { messages: msgs };
+              }
+              return { messages: msgs };
+            });
+            break;
+          }
+          case 'agent': {
+            const t = event.data.current_date || currentState.currentDate || '';
+            const agentMsg: AgentMessage = {
+              ...event.data,
+              id: ++agentMsgCounter,
+              time: t,
+            };
+            set((state) => {
+              const msgs: StreamMessage[] = [...state.messages];
+              const last = msgs[msgs.length - 1];
+              if (last?.type === 'agent_bundle' && last.data.pending) {
+                msgs[msgs.length - 1] = {
+                  type: 'agent_bundle',
+                  data: {
+                    ...last.data,
+                    agent: agentMsg,
+                    pending: false,
+                  },
+                };
+              } else {
+                msgs.push({ type: 'agent', data: agentMsg });
+              }
+              return {
+                messages: msgs,
+                agentMessages: [...state.agentMessages, agentMsg],
+              };
+            });
+            break;
+          }
+          case 'progress':
+            currentState._setProgress(event.data.current_date);
+            break;
+          case 'complete':
+            currentState._setComplete(event.data.stats, event.data.trades);
+            break;
+          case 'error':
+            currentState._setError(event.data.message);
+            break;
+          case 'cancelled':
+            set({ isRunning: false });
+            break;
+        }
+      };
       
       while (true) {
         const { done, value } = await reader.read();
@@ -202,69 +376,23 @@ export const useBacktestStore = create<BacktestState>((set, get) => ({
           if (line.startsWith('data: ')) {
             try {
               const event = JSON.parse(line.slice(6));
-              const currentState = get();
-              
-              switch (event.type) {
-                case 'trade':
-                  currentState._addTrade(event.data);
-                  break;
-                case 'agent_tool': {
-                  const toolTime = event.data.current_date || currentState.currentDate || '';
-                  if (event.data.status === 'running') {
-                    // 新增一条 loading 状态的工具消息
-                    set((state) => ({
-                      messages: [...state.messages, {
-                        type: 'agent_tool' as const,
-                        data: {
-                          id: ++agentMsgCounter,
-                          time: toolTime,
-                          tool_name: event.data.tool_name,
-                          status: 'running' as const,
-                        }
-                      }]
-                    }));
-                  } else if (event.data.status === 'done') {
-                    // 找到最后一条同名 running 的工具消息，更新为 done
-                    set((state) => {
-                      const msgs = [...state.messages];
-                      for (let i = msgs.length - 1; i >= 0; i--) {
-                        const m = msgs[i];
-                        if (m.type === 'agent_tool' && m.data.tool_name === event.data.tool_name && m.data.status === 'running') {
-                          msgs[i] = {
-                            type: 'agent_tool',
-                            data: { ...m.data, status: 'done', result: event.data.result }
-                          };
-                          break;
-                        }
-                      }
-                      return { messages: msgs };
-                    });
-                  }
-                  break;
-                }
-                case 'agent':
-                  currentState._addAgentMessage({
-                    ...event.data,
-                    id: ++agentMsgCounter,
-                    time: event.data.current_date || currentState.currentDate || '',
-                  });
-                  break;
-                case 'progress':
-                  currentState._setProgress(event.data.current_date);
-                  break;
-                case 'complete':
-                  currentState._setComplete(event.data.stats, event.data.trades);
-                  break;
-                case 'error':
-                  currentState._setError(event.data.message);
-                  break;
-                case 'cancelled':
-                  set({ isRunning: false });
-                  break;
-              }
+              handleEvent(event);
             } catch (e) {
               console.error('解析事件失败:', e, line);
             }
+          }
+        }
+      }
+
+      // 处理 EOF 前最后一段残留（无交易时 complete 事件更容易落在这里）
+      if (buffer.trim()) {
+        for (const line of buffer.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            handleEvent(event);
+          } catch (e) {
+            console.error('解析尾部事件失败:', e, line);
           }
         }
       }
@@ -315,7 +443,18 @@ export const useBacktestStore = create<BacktestState>((set, get) => ({
   },
   
   _setComplete: (stats, trades) => {
-    set({ stats, trades: trades.map((t, i) => ({ ...t, id: i + 1 })), isRunning: false });
+    const normalizedStats: BacktestStats = {
+      ...DEFAULT_STATS,
+      ...(stats || {}),
+      // 后端无交易可能传 "NaN"，前端展示统一为 0.0%
+      win_rate: stats?.win_rate && stats.win_rate !== 'NaN' ? stats.win_rate : '0.0%',
+    };
+    const normalizedTrades = Array.isArray(trades) ? trades : [];
+    set({
+      stats: normalizedStats,
+      trades: normalizedTrades.map((t, i) => ({ ...t, id: i + 1 })),
+      isRunning: false,
+    });
   },
   
   _setError: (error) => {
