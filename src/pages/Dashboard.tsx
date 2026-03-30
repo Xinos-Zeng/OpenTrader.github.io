@@ -9,7 +9,11 @@ import NavBar from '../components/NavBar';
 import StrategyCard from '../components/StrategyCard';
 import LeaderboardCard from '../components/LeaderboardCard';
 import StrategyDetailModal from '../components/StrategyDetailModal';
+import { buildOpenClawSkillsGuideText } from '../content/openclawSkillsGuide';
+import { copyToClipboard } from '../utils/copyToClipboard';
 import './Dashboard.css';
+
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -33,6 +37,7 @@ export default function Dashboard() {
   
   // 策略详情弹窗
   const [detailStrategy, setDetailStrategy] = useState<UserStrategy | null>(null);
+  const [openclawCopyBusy, setOpenclawCopyBusy] = useState(false);
 
   useEffect(() => {
     fetchUser();
@@ -150,6 +155,17 @@ export default function Dashboard() {
     navigate('/backtest/stream');
   };
 
+  const handleCopyOpenclawGuide = async () => {
+    setOpenclawCopyBusy(true);
+    try {
+      const text = buildOpenClawSkillsGuideText();
+      const ok = await copyToClipboard(text);
+      showToast(ok ? '已复制' : '复制失败，请长按下方说明手动复制', ok ? 'success' : 'error');
+    } finally {
+      setOpenclawCopyBusy(false);
+    }
+  };
+
   return (
     <div className="page">
       <NavBar />
@@ -158,6 +174,31 @@ export default function Dashboard() {
         <div className="page-header">
           <h1>选择策略</h1>
           <p>选择一个交易策略模板开始回测或模拟交易</p>
+        </div>
+
+        <div className="openclaw-guide-banner" role="region" aria-label="OpenClaw 技能引导">
+          <div className="openclaw-guide-text">
+            <strong>🦞 OpenClaw 技能</strong>
+            <span>
+              一键复制安装引导，粘贴到 OpenClaw 对话即可；用法见技能包内教程。
+              <a
+                href="https://github.com/xinos-zeng/TqSim-Trade-Skills-Openclaw"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="openclaw-guide-link"
+              >
+                TqSim 期货回测技能包
+              </a>
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-secondary openclaw-guide-btn"
+            onClick={handleCopyOpenclawGuide}
+            disabled={openclawCopyBusy}
+          >
+            {openclawCopyBusy ? '复制中…' : '📋 复制'}
+          </button>
         </div>
 
         <div className="dashboard-layout">
