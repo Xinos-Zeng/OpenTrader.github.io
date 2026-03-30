@@ -171,16 +171,11 @@ export default function Dashboard() {
       <NavBar />
       
       <main className="container page-content">
-        <div className="page-header">
-          <h1>选择策略</h1>
-          <p>选择一个交易策略模板开始回测或模拟交易</p>
-        </div>
-
         <div className="openclaw-guide-banner" role="region" aria-label="OpenClaw 技能引导">
           <div className="openclaw-guide-text">
             <strong>🦞 OpenClaw 技能</strong>
             <span>
-              一键复制安装引导，粘贴到 OpenClaw 对话即可；用法见技能包内教程。
+              一键复制安装引导
               <a
                 href="https://github.com/xinos-zeng/TqSim-Trade-Skills-Openclaw"
                 target="_blank"
@@ -199,6 +194,11 @@ export default function Dashboard() {
           >
             {openclawCopyBusy ? '复制中…' : '📋 复制'}
           </button>
+        </div>
+
+        <div className="page-header">
+          <h1>选择策略</h1>
+          <p>选择一个交易策略模板开始回测或模拟交易</p>
         </div>
 
         <div className="dashboard-layout">
