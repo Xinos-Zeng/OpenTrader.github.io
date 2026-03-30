@@ -165,7 +165,7 @@ export default function Dashboard() {
           <div className="strategy-area">
             {/* 系统策略 */}
             <section className="strategy-section">
-              <h2>系统策略</h2>
+              <h2>示例策略模板</h2>
               {isLoading ? (
                 <div className="loading">
                   <div className="spinner"></div>
